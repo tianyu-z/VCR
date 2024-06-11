@@ -4,11 +4,16 @@
 
 † Equal contribution
 
+<div align="center">
+
 [![arXiv](https://img.shields.io/badge/arXiv-2406.06462-blue.svg)](https://arxiv.org/abs/2406.06462)
 [![Static Badge](https://img.shields.io/badge/%F0%9F%A4%97-VCR_wiki_full-red)](https://huggingface.co/collections/vcr-org/vcr-visual-caption-recognition-6661393b1761e2aff7b967b9)
 [![Static Badge](https://img.shields.io/badge/%F0%9F%A4%97-VCR_wiki_small_test-red)](https://huggingface.co/collections/vcr-org/vcr-visual-caption-restoration-smaller-test-subsets-6667b591329b67db9408b493)
+</div>
 
-
+<div align="center">
+  <img src="assets/icon_vcr.jpg" alt="VCR-Wiki Logo" width="475"/>
+</div>
 
 # Quick Start
 ```bash
