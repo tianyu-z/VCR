@@ -9,6 +9,9 @@
 [![Static Badge](https://img.shields.io/badge/%F0%9F%A4%97-VCR_wiki_small_test-red)](https://huggingface.co/collections/vcr-org/vcr-visual-caption-restoration-smaller-test-subsets-6667b591329b67db9408b493)
 
 # Quick Start
+```bash
+pip install datasets
+```
 ```python
 from datasets import load_dataset
 # load the English easy mode dataset
@@ -20,7 +23,7 @@ dataset = load_dataset("vcr-org/VCR-wiki-zh-easy")
 # load the Chinese hard mode dataset
 dataset = load_dataset("vcr-org/VCR-wiki-zh-hard")
 
-for obs in dataset['train']:
+for obs in dataset['train']: # or 'validation' or 'test'
     # your own code here
 ```
 
