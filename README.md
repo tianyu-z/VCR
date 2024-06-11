@@ -47,7 +47,7 @@ We present VCR-wiki, a dataset designed for the Visual Caption Restoration (VCR)
 Please refer to our main figure below for an overview of the VCR task.
 
 <div align="center">
-  <img src="assets/main_pic_en_easy.jpg" alt="VCR-Wiki Logo" width="300"/>
+  <img src="assets/main_pic_en_easy.jpg" alt="VCR-Wiki Logo" width="450"/>
 </div>
 
 
