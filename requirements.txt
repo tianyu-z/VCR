@@ -1,0 +1,7 @@
+Pillow~=9.5.0
+datasets~=2.19.1
+numpy~=1.26.4
+spacy~=3.7.4
+torch>=2.1.0
+fire~=0.6.0
+torchvision

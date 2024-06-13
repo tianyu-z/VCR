@@ -61,6 +61,47 @@ VCR challenges models to restore partially obscured text within images, leveragi
 VCR-wiki comprises **2.11M** English and **346K** Chinese entities sourced from Wikipedia, offered in both easy and hard variants. Initial results indicate that current vision-language models fall short compared to human performance on this task.
 
 
+# Dataset Generation
+
+The code for generating a VCR dataset is in `src/dataset`. Before you start, you need:
+
+1. A dataset containing two columns: `image` and `caption`, where `image` contains PIL.Image objects and `caption` is the corresponding caption.
+2. A font file for rendering text on images. We used Arial for English and SimSum for Chinese in our experiments.
+3. (Optional) A censor word list for initial filtering of harmful entries.
+
+To generate a VCR dataset, you can run the following command:
+
+```bash
+cd src/dataset
+python generate_vcr_dataset.py \
+    --dataset_path /path/to/dataset \
+    --is_local_dataset True \
+    --mask_mode "ngram" \
+    --language "en" \
+    --font_path /path/to/font \
+    --censor_path /path/to/censor \
+    --output_dir /path/to/output
+```
+
+The full list of arguments for `generate_vcr_dataset.py` is as follows:
+* `--dataset_path`: The name or path of the original image-text pair dataset. Need to have "image" and "caption" columns.
+* `--is_local_dataset`: Whether the dataset is stored locally. If True, the script will call `datasets.load_from_disk()` to load the dataset.
+* `--mask_mode`: The masking mode for generating VCR dataset. One of "nouns", "sentence", "percentage", "ngram". Default is "ngram".
+* `--mask_p`: The percentage of words to mask when `mask_mode` is "percentage". Default is 0.5.
+* `--n_gram`: The n-gram length when `mask_mode` is "ngram". Default is 5.
+* `--n_lines`: The total number of lines of caption to keep in the image. Default is 5.
+* `--language`: The language of the dataset. Currently, has to be one of "en" or "zh".
+* `--easy_mode`: Whether to generate the easy mode dataset. Default is False.
+* `--font_path`: The path to the font file for rendering text on images. You will need to download the font file yourself.
+* `--font_size`: The font size for rendering text on images. Default is 20.
+* `--background_color`: The background color for rendering text on images. Default is "white".
+* `--save_image_examples`: Whether to save example images. Default is False.
+* `--save_image_name`: The name of the saved example image. Default is None.
+* `--num_examples`: The number of instances in the output dataset. Default is 0 (no limit).
+* `--censor_path`: The path to the censor word list for initial dataset filtering. Default is None.
+* `--random_seed`: The random seed for dataset generation. Default is 42.
+* `--output_dir`: The output directory for the generated VCR dataset. Default is `./data`.
+
 # Citation
 If you find VCR useful for your research and applications, please cite using this BibTeX:
 ```bibtex

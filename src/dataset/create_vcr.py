@@ -20,6 +20,7 @@ def generate_vcr_single(
         n_lines: int = 5,
         language: str = "en",
         easy_mode: bool = False,
+        font_path: str = "arial.ttf",
         font_size: int = 20,
         texts_to_cross: Optional[List[str]] = None,
         background_color: str = "white",
@@ -36,6 +37,7 @@ def generate_vcr_single(
     :param n_lines: int. The number of lines to stack the text below the image.
     :param language: float. The language of the text. Currently only support ["en", "zh"].
     :param easy_mode: bool. If True, toggle easy mode generation.
+    :param font_path: str. The path to the font file. We used 'arial.ttf' for English and 'simsun.ttc' for Chinese.
     :param font_size: int. The font size of the text.
     :param texts_to_cross: Optional[List[str]]. A list of texts to cross out. If None, use cross_text_func to generate.
     :param background_color: str. The background color of the text image.
@@ -56,7 +58,6 @@ def generate_vcr_single(
         mask_func = partial(mask_ngram, mask_p=mask_p, n=n_gram, language=language)
 
     if language == "en":
-        font_path = "arial.ttf"
         if easy_mode:
             lower_cross_height = 0.46
             upper_cross_height = 0.77
@@ -64,7 +65,6 @@ def generate_vcr_single(
             lower_cross_height = 0.41
             upper_cross_height = 0.80
     elif language == "zh":
-        font_path = "simsun.ttc"
         if easy_mode:
             lower_cross_height = 0.38
             upper_cross_height = 0.62
@@ -127,30 +127,40 @@ def generate_vcr_single(
     return example
 
 
-def generate_vcr(dataset_name_or_path: str = "wit_en",
-                 local_dataset: bool = False,
+def generate_vcr(dataset_path: str = "wit_en",
+                 is_local_dataset: bool = False,
                  mask_mode: str = "ngram",
                  mask_p: float = 0.5,
                  n_gram: int = 5,
                  n_lines: int = 5,
-                 easy_mode: bool = False,
-                 num_examples: int = 0,
                  language: str = "en",
+                 easy_mode: bool = False,
+                 font_path: str = "arial.ttf",
+                 font_size: int = 20,
+                 background_color: str = "white",
+                 save_image_examples: bool = False,
+                 save_image_name: Optional[str] = None,
+                 num_examples: int = 0,
                  censor_path: str = None,
                  random_seed: int = 42,
                  output_path: str = './data'
                  ):
     """
     Create a new VCR dataset from a given dataset.
-    :param dataset_name_or_path: str. The name or path of the original image-text pair dataset. Need to have "image" and "caption" columns.
-    :param local_dataset: bool. If True, load the dataset from local disk. Otherwise, load the dataset from the Hugging Face dataset hub.
+    :param dataset_path: str. The name or path of the original image-text pair dataset. Need to have "image" and "caption" columns.
+    :param is_local_dataset: bool. If True, load the dataset from local disk. Otherwise, load the dataset from the Hugging Face dataset hub.
     :param mask_mode: str. The mode of masking. One of ["nouns", "sentence", "percentage", "ngram"].
     :param mask_p: float. The maximum proportion of spaCy tokens to mask in the text.
     :param n_gram: int. The n-gram size for the n-gram masking mode.
     :param n_lines: int. The number of lines to stack the text below the image.
-    :param easy_mode: bool. If True, toggle easy mode generation.
-    :param num_examples: int. The number of examples to generate. 0 for all examples.
     :param language: str. The language of the text. Currently only support ["en", "zh"].
+    :param easy_mode: bool. If True, toggle easy mode generation.
+    :param font_path: str. The path to the font file. We used 'arial.ttf' for English and 'simsun.ttc' for Chinese.
+    :param font_size: int. The font size of the text.
+    :param background_color: str. The background color of the text image.
+    :param save_image_examples: bool. If True, save the generated images.
+    :param save_image_name: str. The name of the saved images.
+    :param num_examples: int. The number of examples to generate. 0 for all examples.
     :param censor_path: str. The path to a censor list. None for no censor list used.
     :param random_seed: int. The random seed.
     :param output_path: str. The path to save the new dataset.
@@ -167,10 +177,10 @@ def generate_vcr(dataset_name_or_path: str = "wit_en",
         with open(censor_path) as f:
             censor = set([line.strip() for line in f.readlines()])
 
-    if local_dataset:
-        dataset = load_from_disk(dataset_name_or_path)
+    if is_local_dataset:
+        dataset = load_from_disk(dataset_path)
     else:
-        dataset = load_dataset(dataset_name_or_path)
+        dataset = load_dataset(dataset_path)
 
     assert isinstance(dataset, Dataset), "The dataset must be a Dataset object."
     assert "image" in dataset.column_names, "The dataset must have an 'image' column."
@@ -194,10 +204,16 @@ def generate_vcr(dataset_name_or_path: str = "wit_en",
         fn_kwargs={
             "mask_mode": mask_mode,
             "mask_p": mask_p,
-            "language": language,
             "n_gram": n_gram,
             "n_lines": n_lines,
+            "language": language,
             "easy_mode": easy_mode,
+            "font_path": font_path,
+            "font_size": font_size,
+            "background_color": background_color,
+            "save_image": save_image_examples,
+            "save_image_name": save_image_name,
+            "output_tensor": False,
         },
     )
 
@@ -216,7 +232,7 @@ def generate_vcr(dataset_name_or_path: str = "wit_en",
     dataset = dataset.filter(lambda x: len(x["crossed_text"]) > 0)
     diff_mode = "easy" if easy_mode else "hard"
     dataset.save_to_disk(os.path.join(output_path,
-                                      f"vcr_{dataset_name_or_path.replace('/', '-')}_{language}_{diff_mode}_{mask_mode}_{mask_p}_{n_gram}_{n_lines}"))
+                                      f"vcr_{dataset_path.replace('/', '-')}_{language}_{diff_mode}_{mask_mode}_{mask_p}_{n_gram}_{n_lines}"))
 
 
 if __name__ == "__main__":
