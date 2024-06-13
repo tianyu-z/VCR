@@ -16,9 +16,11 @@
 </div>
 
 # News
+- 🔥🔥🔥 **[2024-06-13]** We release the evaluation codes for open-source models, closed-source models and the pipeline of creating the dataset.
 - 🔥🔥🔥 **[2024-06-12]** We have incorperated the VCR-wiki evaluation process in [lmms-eval](https://github.com/EvolvingLMMs-Lab/lmms-eval) framework. Now, users can use one line command to run the evaluation of models on the VCR-wiki test datasets.
 - 🔥🔥🔥 **[2024-06-11]** Our paper has been released on the [arXiv](https://arxiv.org/abs/2406.06462), including the evaluation results of a series of models.
 - 🔥🔥🔥 **[2024-06-10]** We have released the [VCR-wiki dataset](https://huggingface.co/vcr-org), which contains 2.11M English and 346K Chinese entities sourced from Wikipedia, offered in both easy and hard variants. The dataset is available in the Hugging Face Datasets library.
+
 # Quick Start
 ```bash
 pip install datasets
@@ -85,7 +87,7 @@ For the models not on list, they are not intergated with huggingface, please ref
 ```bash
 # We use HuggingFaceM4/idefics2-8b and vcr_wiki_en_easy as an example
 # Inference from the VLMs and save the results to {model_id}_{difficulty}_{language}.json
-cd cd src/evaluation
+cd src/evaluation
 python3 inference.py --dataset_handler "vcr-org/VCR-wiki-en-easy-test" --model_id "HuggingFaceM4/idefics2-8b" --device "cuda" --dtype "bf16" --save_interval 50 --resume True
 
 # Evaluate the results and save the evaluation metrics to {model_id}_{difficulty}_{language}_evaluation_result.json
@@ -100,6 +102,7 @@ We provide the evaluation script for the close-source model: `GPT-4o`, `GPT-4-Tu
 
 You need an API Key, a pre-saved testing dataset and specify the path of the data saving the paper
 ```bash
+cd src/evaluation
 # save the testing dataset to the path
 python3 save_image_from_dataset.py --output_path .
 
@@ -114,6 +117,7 @@ python3 gather_results.py --jsons_path .
 ```
 
 ## Method 2: use lmms-eval framework
+You may need to incorporate the inference method of your model if the lmms-eval framework does not support it. For details, please refer to [here](https://github.com/EvolvingLMMs-Lab/lmms-eval/blob/main/docs/model_guide.md)
 ```bash
 pip install git+https://github.com/EvolvingLMMs-Lab/lmms-eval.git
 # We use HuggingFaceM4/idefics2-8b and vcr_wiki_en_easy as an example
