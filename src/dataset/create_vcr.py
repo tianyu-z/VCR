@@ -158,12 +158,14 @@ def generate_vcr(dataset_name_or_path: str = "wit_en",
     """
     set_seed(random_seed)
 
+    assert language in ["en", "zh"], "The language must be one of ['en', 'zh']."
+    assert mask_mode in ["nouns", "sentence", "percentage",
+                         "ngram"], "The mask mode must be one of ['nouns', 'sentence', 'percentage', 'ngram']."
+
     censor = None
     if censor_path is not None:
         with open(censor_path) as f:
             censor = set([line.strip() for line in f.readlines()])
-
-    assert language in ["en", "zh"]
 
     if local_dataset:
         dataset = load_from_disk(dataset_name_or_path)
@@ -171,6 +173,8 @@ def generate_vcr(dataset_name_or_path: str = "wit_en",
         dataset = load_dataset(dataset_name_or_path)
 
     assert isinstance(dataset, Dataset), "The dataset must be a Dataset object."
+    assert "image" in dataset.column_names, "The dataset must have an 'image' column."
+    assert "caption" in dataset.column_names, "The dataset must have a 'caption' column."
 
     if num_examples > 0:
         dataset = dataset.select(sample(range(len(dataset)), num_examples))
