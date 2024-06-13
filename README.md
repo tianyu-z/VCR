@@ -15,6 +15,10 @@
   <img src="assets/icon_vcr.jpg" alt="VCR-Wiki Logo" width="475"/>
 </div>
 
+# News
+- 🔥🔥🔥 **[2024-06-12]** We have incorperated the VCR-wiki evaluation process in [lmms-eval](https://github.com/EvolvingLMMs-Lab/lmms-eval) framework. Now, users can use one line command to run the evaluation of models on the VCR-wiki test datasets.
+- 🔥🔥🔥 **[2024-06-11]** Our paper has been released on the [arXiv](https://arxiv.org/abs/2406.06462), including the evaluation results of a series of models.
+- 🔥🔥🔥 **[2024-06-10]** We have released the [VCR-wiki dataset](https://huggingface.co/vcr-org), which contains 2.11M English and 346K Chinese entities sourced from Wikipedia, offered in both easy and hard variants. The dataset is available in the Hugging Face Datasets library.
 # Quick Start
 ```bash
 pip install datasets
@@ -61,6 +65,61 @@ VCR challenges models to restore partially obscured text within images, leveragi
 VCR-wiki comprises **2.11M** English and **346K** Chinese entities sourced from Wikipedia, offered in both easy and hard variants. Initial results indicate that current vision-language models fall short compared to human performance on this task.
 
 
+# Model Evaluation
+
+## Method 1 (recommended): use the evaluation script
+### Open-source evaluation
+We support open-source model_id: 
+```python
+["openbmb/MiniCPM-Llama3-V-2_5",
+"OpenGVLab/InternVL-Chat-V1-5",
+"internlm/internlm-xcomposer2-vl-7b",
+"HuggingFaceM4/idefics2-8b",
+"Qwen/Qwen-VL-Chat",
+"THUDM/cogvlm2-llama3-chinese-chat-19B",
+"THUDM/cogvlm2-llama3-chat-19B",
+"echo840/Monkey-Chat",]
+```
+For the models not on list, they are not intergated with huggingface, please refer to their github repo to create the evaluation pipeline.
+
+```bash
+# We use HuggingFaceM4/idefics2-8b and vcr_wiki_en_easy as an example
+# Inference from the VLMs and save the results to {model_id}_{difficulty}_{language}.json
+cd cd src/evaluation
+python3 inference.py --dataset_handler "vcr-org/VCR-wiki-en-easy-test" --model_id "HuggingFaceM4/idefics2-8b" --device "cuda" --dtype "bf16" --save_interval 50 --resume True
+
+# Evaluate the results and save the evaluation metrics to {model_id}_{difficulty}_{language}_evaluation_result.json
+python3 evaluation_metrics.py --model_id HuggingFaceM4/idefics2-8b --output_path . --json_filename "HuggingFaceM4_idefics2-8b_en_easy.json" --dataset_handler "vcr-org/VCR-wiki-en-easy-test"
+
+# To get the mean score of all the `{model_id}_{difficulty}_{language}_evaluation_result.json` in `jsons_path` (and the std, confidence interval if `--bootstrap`) of the evaluation metrics
+python3 gather_results.py --jsons_path .
+```
+
+### Close-source evaluation
+We provide the evaluation script for the close-source model: `GPT-4o`, `GPT-4-Turbo`, `Claude-3-Opus` in the `evaluation` folder.
+
+You need an API Key, a pre-saved testing dataset and specify the path of the data saving the paper
+```bash
+# save the testing dataset to the path
+python3 save_image_from_dataset.py --output_path .
+
+# Inference Put your API key and Image Path in the evaluation script (e.g. gpt-4o.py)
+python3 gpt-4o.py
+
+# Evaluate the results and save the evaluation metrics to {model_id}_{difficulty}_{language}_evaluation_result.json
+python3 evaluation_metrics.py --model_id gpt4o --output_path . --json_filename "gpt4o_en_easy.json" --dataset_handler "vcr-org/VCR-wiki-en-easy-test"
+
+# To get the mean score of all the `{model_id}_{difficulty}_{language}_evaluation_result.json` in `jsons_path` (and the std, confidence interval if `--bootstrap`) of the evaluation metrics
+python3 gather_results.py --jsons_path .
+```
+
+## Method 2: use lmms-eval framework
+```bash
+pip install git+https://github.com/EvolvingLMMs-Lab/lmms-eval.git
+# We use HuggingFaceM4/idefics2-8b and vcr_wiki_en_easy as an example
+python3 -m accelerate.commands.launch --num_processes=8 -m lmms_eval --model idefics2 --model_args pretrained="HuggingFaceM4/idefics2-8b" --tasks vcr_wiki_en_easy --batch_size 1 --log_samples --log_samples_suffix HuggingFaceM4_idefics2-8b_vcr_wiki_en_easy --output_path ./logs/
+```
+
 # Dataset Generation
 
 The code for generating a VCR dataset is in `src/dataset`. Before you start, you need:
@@ -72,7 +131,7 @@ The code for generating a VCR dataset is in `src/dataset`. Before you start, you
 To generate a VCR dataset, you can run the following command:
 
 ```bash
-cd src/dataset
+cd src/build_dataset
 python generate_vcr_dataset.py \
     --dataset_path /path/to/dataset \
     --is_local_dataset True \
