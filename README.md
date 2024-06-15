@@ -11,6 +11,8 @@
 [![Static Badge](https://img.shields.io/badge/%F0%9F%A4%97-VCR_wiki_small_test-red)](https://huggingface.co/collections/vcr-org/vcr-visual-caption-restoration-smaller-test-subsets-6667b591329b67db9408b493)
 </div>
 
+[中文读我文档](README-CN.md)
+
 <div align="center">
   <img src="assets/icon_vcr.jpg" alt="VCR-Wiki Logo" width="475"/>
 </div>

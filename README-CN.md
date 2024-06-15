@@ -11,9 +11,12 @@
 [![Static Badge](https://img.shields.io/badge/%F0%9F%A4%97-VCR_wiki_small_test-red)](https://huggingface.co/collections/vcr-org/vcr-visual-caption-restoration-smaller-test-subsets-6667b591329b67db9408b493)
 </div>
 
+[English Readme](README.md)
+
 <div align="center">
   <img src="assets/icon_vcr.jpg" alt="VCR-Wiki Logo" width="475"/>
 </div>
+
 
 # 新闻
 - 🔥🔥🔥 **[2024-06-15]** 我们发布了torch框架下的VCR变换，可以为任意图像-文本对生成带有嵌入文本的VCR图像。此变换可作为VLMs中的预训练任务之一。
