@@ -9,7 +9,7 @@ import torch
 from PIL import ImageDraw, ImageFont, PngImagePlugin
 
 LARGE_ENOUGH_NUMBER = 100
-PngImagePlugin.MAX_TEXT_CHUNK = LARGE_ENOUGH_NUMBER * (1024 ** 2)
+PngImagePlugin.MAX_TEXT_CHUNK = LARGE_ENOUGH_NUMBER * (1024**2)
 
 try:
     nlp_en = spacy.load("en_core_web_sm")
@@ -60,15 +60,29 @@ def mask_ngram(caption, mask_p=0.5, n=5, language="en"):
             token.text
             for token in sentence
             if not token.is_punct
-               and not token.like_num
-               and not any(char.isdigit() for char in token.text)
-               and not token.ent_type_ in ["PERSON", "NORP", "FAC", "ORG", "LOC", "DATE", "TIME", "PERCENT", "MONEY",
-                                           "QUANTITY", "CARDINAL"]
+            and not token.like_num
+            and not any(char.isdigit() for char in token.text)
+            and not token.ent_type_
+            in [
+                "PERSON",
+                "NORP",
+                "FAC",
+                "ORG",
+                "LOC",
+                "DATE",
+                "TIME",
+                "PERCENT",
+                "MONEY",
+                "QUANTITY",
+                "CARDINAL",
+            ]
         ]
         if len(words) < n:
             continue
         # Generate all possible ngrams in the sentence
-        sentence_ngrams = [(i, splitter.join(words[i: i + n])) for i in range(len(words) - n + 1)]
+        sentence_ngrams = [
+            (i, splitter.join(words[i : i + n])) for i in range(len(words) - n + 1)
+        ]
 
         # Shuffle ngrams to randomize selection
         random.shuffle(sentence_ngrams)
@@ -78,9 +92,11 @@ def mask_ngram(caption, mask_p=0.5, n=5, language="en"):
         for ngram in sentence_ngrams:
             start_idx = ngram[0]
             ngram_text = ngram[1]
-            if (start_idx in covered_indices
-                    or start_idx + n in covered_indices
-                    or ngram_text not in caption):
+            if (
+                start_idx in covered_indices
+                or start_idx + n in covered_indices
+                or ngram_text not in caption
+            ):
                 continue
             # Mark the indices of the current ngram as covered
             covered_indices.update(list(range(start_idx - 1, start_idx + n + 1)))
@@ -100,8 +116,7 @@ def set_seed(seed: int):
     return
 
 
-def filter_censor(example,
-                  censor: Union[Set[str], List[str], None] = None):
+def filter_censor(example, censor: Union[Set[str], List[str], None] = None):
     """Filter out examples that contain any of the censor words."""
     if censor is None:
         return True
@@ -115,7 +130,9 @@ def filter_invalid_image(example):
     """Filter out examples with invalid images."""
     try:
         image = example["image"]
-        image_ = datasets.Image().decode_example(image)  # Decode the image data to check if it's valid
+        image_ = datasets.Image().decode_example(
+            image
+        )  # Decode the image data to check if it's valid
         # Perform a simple operation that would fail if the image is corrupt
         _ = image_.getdata()[0]  # Access the first pixel
     except Exception as e:
@@ -126,11 +143,12 @@ def filter_invalid_image(example):
 
 
 def create_text_image(
-        text: str,
-        font_path: str,
-        font_size: int,
-        text_color: str = "black",
-        background_color: str = "white"):
+    text: str,
+    font_path: str,
+    font_size: int,
+    text_color: str = "black",
+    background_color: str = "white",
+):
     """
     Create an image with the given text using the specified font.
     :param text: str. The text to render.
@@ -159,16 +177,16 @@ def create_text_image(
 
 
 def split_and_cross_out_image(
-        text: str,
-        font: ImageFont.FreeTypeFont,
-        max_width: int,
-        lower_cross_height: float,
-        upper_cross_height: float,
-        texts_to_cross: Optional[List[str]] = None,
-        cross_text_func: Optional[Callable] = None,
-        background_color: str = "white",
-        language: str = "en",
-        n_lines: int = 5,
+    text: str,
+    font: ImageFont.FreeTypeFont,
+    max_width: int,
+    lower_cross_height: float,
+    upper_cross_height: float,
+    texts_to_cross: Optional[List[str]] = None,
+    cross_text_func: Optional[Callable] = None,
+    background_color: str = "white",
+    language: str = "en",
+    n_lines: int = 5,
 ):
     """
     Split text into lines and cross out specified texts. Return the final image with text and crossed-out texts.
@@ -184,7 +202,9 @@ def split_and_cross_out_image(
     :param n_lines: int. The number of lines of captions to keep.
     :return: stacked_image (VI+TEI image), text_in_image (TEI image), texts_to_cross (List[str], crossed-out texts)
     """
-    assert texts_to_cross is not None or cross_text_func is not None, "Either texts_to_cross or cross_text_func must be provided."
+    assert (
+        texts_to_cross is not None or cross_text_func is not None
+    ), "Either texts_to_cross or cross_text_func must be provided."
 
     if language == "en":
         sample_text = "hg"
@@ -234,7 +254,9 @@ def split_and_cross_out_image(
     line_height = int((bboxtmp[3] - bboxtmp[1]) * (1 + height_buffer))
 
     stacked_height = line_height * len(lines)
-    stacked_image = PIL.Image.new("RGB", (max_width, stacked_height + 1), background_color)
+    stacked_image = PIL.Image.new(
+        "RGB", (max_width, stacked_height + 1), background_color
+    )
     draw = ImageDraw.Draw(stacked_image)
 
     # Draw each line of text initially
@@ -259,19 +281,23 @@ def split_and_cross_out_image(
             line_end = current_length + len(line)
 
             # Check if any part of the text_to_cross falls into the current line
-            if ((line_start <= start_index < line_end) or
-                    (line_start < end_index <= line_end) or
-                    (start_index <= line_start and end_index >= line_end)):
+            if (
+                (line_start <= start_index < line_end)
+                or (line_start < end_index <= line_end)
+                or (start_index <= line_start and end_index >= line_end)
+            ):
                 cross_start = max(start_index, line_start) - line_start
                 cross_end = min(end_index, line_end) - line_start
-                cross_start_pos = draw.textbbox((0, 0), line[:cross_start], font=font)[2]
+                cross_start_pos = draw.textbbox((0, 0), line[:cross_start], font=font)[
+                    2
+                ]
                 cross_end_pos = draw.textbbox((0, 0), line[:cross_end], font=font)[2]
                 draw.rectangle(
                     (
                         cross_start_pos,
                         y + lower_cross_height * line_height,
                         cross_end_pos,
-                        y + upper_cross_height * line_height
+                        y + upper_cross_height * line_height,
                     ),
                     fill=background_color,
                 )

@@ -16,6 +16,7 @@
 </div>
 
 # News
+- 🔥🔥🔥 **[2024-06-15]** We release the VCR transform in torch so that given any image-text pairs, we can generate the VCR images with text embedded in it. This transform can be used as one of the pretrain task in VLMs.
 - 🔥🔥🔥 **[2024-06-13]** We release the evaluation codes for open-source models, closed-source models and the pipeline of creating the dataset.
 - 🔥🔥🔥 **[2024-06-12]** We have incorperated the VCR-wiki evaluation process in [lmms-eval](https://github.com/EvolvingLMMs-Lab/lmms-eval) framework. Now, users can use one line command to run the evaluation of models on the VCR-wiki test datasets.
 - 🔥🔥🔥 **[2024-06-11]** Our paper has been released on the [arXiv](https://arxiv.org/abs/2406.06462), including the evaluation results of a series of models.
@@ -57,7 +58,7 @@ Please refer to our main figure below for an overview of the VCR task.
 </div>
 
 
-VCR challenges models to restore partially obscured text within images, leveraging pixel-level hints and contextual cues. Unlike traditional text-based tasks, VCR necessitates a synergistic understanding of **visual image (VI)**, **string text (ST)**, and **text embedded in image (TEI)**. Our dataset is crafted using a pipeline that generates synthetic images from image-caption pairs with adjustable caption visibility, allowing for varied difficulty levels. The show the pipeline of creating the dataset here and we will release the code of creating the dataset soon.
+VCR challenges models to restore partially obscured text within images, leveraging pixel-level hints and contextual cues. Unlike traditional text-based tasks, VCR necessitates a synergistic understanding of **visual image (VI)**, **string text (ST)**, and **text embedded in image (TEI)**. Our dataset is crafted using a pipeline that generates synthetic images from image-caption pairs with adjustable caption visibility, allowing for varied difficulty levels. We release the pipeline of creating the dataset here, the code of creating the dataset and the `VCRtransform` as the torch-based transform which can be used in pretraining of VLMs.
 
 <div align="center">
   <img src="assets/vcr_pipeline.png" alt="VCR-pipeline" width="900"/>
@@ -85,6 +86,7 @@ We support open-source model_id:
 For the models not on list, they are not intergated with huggingface, please refer to their github repo to create the evaluation pipeline.
 
 ```bash
+pip install -r requirements.txt
 # We use HuggingFaceM4/idefics2-8b and vcr_wiki_en_easy as an example
 # Inference from the VLMs and save the results to {model_id}_{difficulty}_{language}.json
 cd src/evaluation
@@ -102,6 +104,7 @@ We provide the evaluation script for the close-source model: `GPT-4o`, `GPT-4-Tu
 
 You need an API Key, a pre-saved testing dataset and specify the path of the data saving the paper
 ```bash
+pip install -r requirements.txt
 cd src/evaluation
 # save the testing dataset to the path
 python3 save_image_from_dataset.py --output_path .
@@ -123,6 +126,33 @@ pip install git+https://github.com/EvolvingLMMs-Lab/lmms-eval.git
 # We use HuggingFaceM4/idefics2-8b and vcr_wiki_en_easy as an example
 python3 -m accelerate.commands.launch --num_processes=8 -m lmms_eval --model idefics2 --model_args pretrained="HuggingFaceM4/idefics2-8b" --tasks vcr_wiki_en_easy --batch_size 1 --log_samples --log_samples_suffix HuggingFaceM4_idefics2-8b_vcr_wiki_en_easy --output_path ./logs/
 ```
+# Usage of VCR Transform
+```python
+from vcr_transform import VCRTransform
+# the "crossed_text" is optional, when it is None or not provided, VCRTransform will generate the crossed_text automatically.
+example = {
+    "image": Image.open("assets/main_pic.png"),
+    "caption": "Machine learning researchers from around the globe are excited by the new GPU. Even if it is as large as a stovetop, its cutting-edge capabilities enable more efficient and cheaper large-scale experiments.",
+    "crossed_text": [
+        "learning researchers from around the",
+        "cutting-edge capabilities enable more",
+    ],
+}
+# Take the easy mode in English as an example
+transform = VCRTransform(mode="easy", language="en") 
+transformed_example = transform(example)
+```
+The full list of arguments for `VCRTransform` initialization is as follows:
+* `--mode`: 'easy' or 'hard' or None. If 'easy', the text will be crossed out in the middle of the image. If 'hard', the text will be crossed out in the upper part of the image. If None, the parameters mask_mode, mask_p, n_gram, n_lines, language, font_path, font_size, background_color, output_tensor will be used.
+* `--mask_mode (str): 'nouns' or 'sentence' or 'percentage' or 'ngram'.
+* `--mask_p (float): The percentage of words to mask out. Default is 0.5.
+* `--n_gram (int): The number of subwords to mask out.
+* `--n_lines (int): The number of lines at most to split the text into. Default is 5.
+* `--language (str): 'en' or 'zh'.
+* `--font_path (str): The path to the font file for rendering text on images.
+* `--font_size (int): The font size for rendering text on images. Default is 20.
+* `--background_color (str): The background color for rendering text on images. Default is 'white'.
+* `--output_tensor (bool): Whether to output the image as a tensor. Default is False.
 
 # Dataset Generation
 

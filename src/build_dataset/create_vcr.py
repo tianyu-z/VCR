@@ -5,28 +5,36 @@ from typing import Optional, List
 
 import fire
 import torchvision.transforms as transforms
-from PIL import Image, ImageFont
+from PIL import ImageFont
 from datasets import load_dataset, load_from_disk, Image, Dataset
 
-from src.dataset.utils import split_and_cross_out_image
-from utils import set_seed, filter_censor, filter_invalid_image, mask_nouns, mask_sentence, mask_percentage, mask_ngram
+from src.build_dataset.utils import split_and_cross_out_image
+from utils import (
+    set_seed,
+    filter_censor,
+    filter_invalid_image,
+    mask_nouns,
+    mask_sentence,
+    mask_percentage,
+    mask_ngram,
+)
 
 
 def generate_vcr_single(
-        example,
-        mask_mode: str = "ngram",
-        mask_p: float = 0.5,
-        n_gram: int = 5,
-        n_lines: int = 5,
-        language: str = "en",
-        easy_mode: bool = False,
-        font_path: str = "arial.ttf",
-        font_size: int = 20,
-        texts_to_cross: Optional[List[str]] = None,
-        background_color: str = "white",
-        save_image: bool = False,
-        save_image_name: Optional[str] = None,
-        output_tensor: bool = False,
+    example,
+    mask_mode: str = "ngram",
+    mask_p: float = 0.5,
+    n_gram: int = 5,
+    n_lines: int = 5,
+    language: str = "en",
+    easy_mode: bool = False,
+    font_path: str = "arial.ttf",
+    font_size: int = 20,
+    texts_to_cross: Optional[List[str]] = None,
+    background_color: str = "white",
+    save_image: bool = False,
+    save_image_name: Optional[str] = None,
+    output_tensor: bool = False,
 ):
     """
     Map function for the dataset. Add the masked text to the example.
@@ -116,7 +124,11 @@ def generate_vcr_single(
             text_only_image.save(save_image_name + "_only_it_center.jpg")
             text_image.save(save_image_name + "_text_image.jpg")
     if output_tensor:
-        transform = transforms.Compose([transforms.ToTensor(), ])
+        transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+            ]
+        )
         stacked_image = transform(stacked_image)
         text_only_image = transform(text_only_image)
 
@@ -127,24 +139,25 @@ def generate_vcr_single(
     return example
 
 
-def generate_vcr(dataset_path: str = "wit_en",
-                 is_local_dataset: bool = False,
-                 mask_mode: str = "ngram",
-                 mask_p: float = 0.5,
-                 n_gram: int = 5,
-                 n_lines: int = 5,
-                 language: str = "en",
-                 easy_mode: bool = False,
-                 font_path: str = "arial.ttf",
-                 font_size: int = 20,
-                 background_color: str = "white",
-                 save_image_examples: bool = False,
-                 save_image_name: Optional[str] = None,
-                 num_examples: int = 0,
-                 censor_path: str = None,
-                 random_seed: int = 42,
-                 output_path: str = './data'
-                 ):
+def generate_vcr(
+    dataset_path: str = "wit_en",
+    is_local_dataset: bool = False,
+    mask_mode: str = "ngram",
+    mask_p: float = 0.5,
+    n_gram: int = 5,
+    n_lines: int = 5,
+    language: str = "en",
+    easy_mode: bool = False,
+    font_path: str = "arial.ttf",
+    font_size: int = 20,
+    background_color: str = "white",
+    save_image_examples: bool = False,
+    save_image_name: Optional[str] = None,
+    num_examples: int = 0,
+    censor_path: str = None,
+    random_seed: int = 42,
+    output_path: str = "./data",
+):
     """
     Create a new VCR dataset from a given dataset.
     :param dataset_path: str. The name or path of the original image-text pair dataset. Need to have "image" and "caption" columns.
@@ -169,8 +182,12 @@ def generate_vcr(dataset_path: str = "wit_en",
     set_seed(random_seed)
 
     assert language in ["en", "zh"], "The language must be one of ['en', 'zh']."
-    assert mask_mode in ["nouns", "sentence", "percentage",
-                         "ngram"], "The mask mode must be one of ['nouns', 'sentence', 'percentage', 'ngram']."
+    assert mask_mode in [
+        "nouns",
+        "sentence",
+        "percentage",
+        "ngram",
+    ], "The mask mode must be one of ['nouns', 'sentence', 'percentage', 'ngram']."
 
     censor = None
     if censor_path is not None:
@@ -184,7 +201,9 @@ def generate_vcr(dataset_path: str = "wit_en",
 
     assert isinstance(dataset, Dataset), "The dataset must be a Dataset object."
     assert "image" in dataset.column_names, "The dataset must have an 'image' column."
-    assert "caption" in dataset.column_names, "The dataset must have a 'caption' column."
+    assert (
+        "caption" in dataset.column_names
+    ), "The dataset must have a 'caption' column."
 
     if num_examples > 0:
         dataset = dataset.select(sample(range(len(dataset)), num_examples))
@@ -193,8 +212,9 @@ def generate_vcr(dataset_path: str = "wit_en",
     dataset = dataset.cast_column("image", Image(decode=False))
     dataset = dataset.filter(
         lambda x: x["caption"] is not None
-                  and len(x["caption"].strip()) > 0
-                  and filter_censor(x, censor))
+        and len(x["caption"].strip()) > 0
+        and filter_censor(x, censor)
+    )
     dataset = dataset.filter(filter_invalid_image)
     dataset = dataset.cast_column("image", Image(decode=True))
 
@@ -225,14 +245,27 @@ def generate_vcr(dataset_path: str = "wit_en",
     dataset = dataset.map(add_question_id, with_indices=True)
 
     # Remove unnecessary columns
-    keep_columns = ["question_id", "image", "caption", "stacked_image", "only_it_image", "crossed_text"]
-    dataset = dataset.remove_columns([col for col in dataset.column_names if col not in keep_columns])
+    keep_columns = [
+        "question_id",
+        "image",
+        "caption",
+        "stacked_image",
+        "only_it_image",
+        "crossed_text",
+    ]
+    dataset = dataset.remove_columns(
+        [col for col in dataset.column_names if col not in keep_columns]
+    )
 
     # Filter out examples with no crossed text.
     dataset = dataset.filter(lambda x: len(x["crossed_text"]) > 0)
     diff_mode = "easy" if easy_mode else "hard"
-    dataset.save_to_disk(os.path.join(output_path,
-                                      f"vcr_{dataset_path.replace('/', '-')}_{language}_{diff_mode}_{mask_mode}_{mask_p}_{n_gram}_{n_lines}"))
+    dataset.save_to_disk(
+        os.path.join(
+            output_path,
+            f"vcr_{dataset_path.replace('/', '-')}_{language}_{diff_mode}_{mask_mode}_{mask_p}_{n_gram}_{n_lines}",
+        )
+    )
 
 
 if __name__ == "__main__":
