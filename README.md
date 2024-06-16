@@ -18,7 +18,7 @@
 </div>
 
 # News
-- 🔥🔥🔥 **[2024-06-15]** We release the VCR transform in torch so that given any image-text pairs, we can generate the VCR images with text embedded in it. This transform can be used as one of the pretrain task in VLMs.
+- 🔥🔥🔥 **[2024-06-15]** We release the VCR transform in torch so that given any image-text pairs, we can generate the VCR images with text embedded in it. This transform can be used as one of the pretrain task within VLMs.
 - 🔥🔥🔥 **[2024-06-13]** We release the evaluation codes for open-source models, closed-source models and the pipeline of creating the dataset.
 - 🔥🔥🔥 **[2024-06-12]** We have incorperated the VCR-wiki evaluation process in [lmms-eval](https://github.com/EvolvingLMMs-Lab/lmms-eval) framework. Now, users can use one line command to run the evaluation of models on the VCR-wiki test datasets.
 - 🔥🔥🔥 **[2024-06-11]** Our paper has been released on the [arXiv](https://arxiv.org/abs/2406.06462), including the evaluation results of a series of models.
@@ -145,16 +145,16 @@ transform = VCRTransform(mode="easy", language="en")
 transformed_example = transform(example)
 ```
 The full list of arguments for `VCRTransform` initialization is as follows:
-* `--mode`: 'easy' or 'hard' or None. If 'easy', the text will be crossed out in the middle of the image. If 'hard', the text will be crossed out in the upper part of the image. If None, the parameters mask_mode, mask_p, n_gram, n_lines, language, font_path, font_size, background_color, output_tensor will be used.
-* `--mask_mode (str): 'nouns' or 'sentence' or 'percentage' or 'ngram'.
-* `--mask_p (float): The percentage of words to mask out. Default is 0.5.
-* `--n_gram (int): The number of subwords to mask out.
-* `--n_lines (int): The number of lines at most to split the text into. Default is 5.
-* `--language (str): 'en' or 'zh'.
-* `--font_path (str): The path to the font file for rendering text on images.
-* `--font_size (int): The font size for rendering text on images. Default is 20.
-* `--background_color (str): The background color for rendering text on images. Default is 'white'.
-* `--output_tensor (bool): Whether to output the image as a tensor. Default is False.
+* `--mode (str)`: 'easy' or 'hard' or None. If 'easy', the text will be crossed out in the middle of the image. If 'hard', the text will be crossed out in the upper part of the image. If None, the parameters mask_mode, mask_p, n_gram, n_lines, language, font_path, font_size, background_color, output_tensor will be used.
+* `--mask_mode (str)`: 'nouns' or 'sentence' or 'percentage' or 'ngram'.
+* `--mask_p (float)`: The percentage of words to mask out. Default is 0.5.
+* `--n_gram (int)`: The number of subwords to mask out.
+* `--n_lines (int)`: The number of lines at most to split the text into. Default is 5.
+* `--language (str)`: 'en' or 'zh'.
+* `--font_path (str)`: The path to the font file for rendering text on images.
+* `--font_size (int)`: The font size for rendering text on images. Default is 20.
+* `--background_color (str)`: The background color for rendering text on images. Default is 'white'.
+* `--output_tensor (bool)`: Whether to output the image as a tensor. Default is False.
 
 # Dataset Generation
 
