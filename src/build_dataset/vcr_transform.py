@@ -8,6 +8,7 @@ from utils import (
     mask_ngram,
     split_and_cross_out_image,
 )
+import os
 
 
 class VCRTransform:
@@ -69,23 +70,21 @@ class VCRTransform:
                 if mode.lower() == "easy":
                     self.lower_cross_height = 0.46
                     self.upper_cross_height = 0.77
-                    self.font_path = "arial.ttf"
 
                 elif mode.lower() == "hard":
                     self.lower_cross_height = 0.41
                     self.upper_cross_height = 0.80
-                    self.font_path = "arial.ttf"
+                self.font_path = os.path.join(os.path.dirname(font_path), "arial.ttf")
 
             elif self.language == "zh":
                 if mode.lower() == "easy":
                     self.lower_cross_height = 0.38
                     self.upper_cross_height = 0.62
-                    self.font_path = "simsun.ttc"
 
                 elif mode.lower() == "hard":
                     self.lower_cross_height = 0.26
                     self.upper_cross_height = 0.75
-                    self.font_path = "simsun.ttc"
+                self.font_path = os.path.join(os.path.dirname(font_path), "simsun.ttc")
 
             else:
                 raise ValueError(
@@ -188,20 +187,20 @@ if __name__ == "__main__":
             "cutting-edge capabilities enable more",
         ],
     }
-    transform = VCRTransform(mode="easy", language="en")
+    transform = VCRTransform(mode="easy", language="en", font_path="fonts/arial.ttf")
     transformed_example = transform(example)
     transformed_example["stacked_image"].save("en_example_image.png")
 
     # Chinese example
-    example = {
-        "image": Image.open("assets/main_pic.png"),
-        "caption": "来自全球各地的机器学习研究人员都对新型 GPU 感到兴奋。即使它只有炉灶那么大，其尖端功能也能让大规模实验更高效、更便宜。",
-        "crossed_text": [
-            "研究人员都对新型 GPU 感到",
-            "即使它只有炉灶那么大",
-            "尖端功能也能让大规模",
-        ],
-    }
-    transform = VCRTransform(mode="easy", language="zh")
-    transformed_example = transform(example)
-    transformed_example["stacked_image"].save("zh_example_image.png")
+    # example = {
+    #     "image": Image.open("assets/main_pic.png"),
+    #     "caption": "来自全球各地的机器学习研究人员都对新型 GPU 感到兴奋。它的尖端功能也能让大规模实验更高效、更便宜，即便它有炉灶那么大。",
+    #     "crossed_text": [
+    #         "全球各地的机器学习",
+    #         "能让大规模实验更高效",
+    #         "即便它有炉灶那么大",
+    #     ],
+    # }
+    # transform = VCRTransform(mode="hard", language="zh", font_path="fonts/simsun.ttc")
+    # transformed_example = transform(example)
+    # transformed_example["stacked_image"].save("zh_example_image.png")

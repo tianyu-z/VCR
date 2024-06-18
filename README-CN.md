@@ -14,7 +14,7 @@
 [English Readme](README.md)
 
 <div align="center">
-  <img src="assets/icon_vcr.jpg" alt="VCR-Wiki Logo" width="475"/>
+  <img src="assets/icon_vcr.jpg" alt="VCR-Wiki-zh-easy" width="475"/>
 </div>
 
 
