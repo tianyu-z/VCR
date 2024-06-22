@@ -14,7 +14,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     for lang in ["en", "zh"]:
         for diff in ["easy", "hard"]:
-            dataset = load_dataset(f"vcr-org/VCR-wiki-{lang}-{diff}")
+            dataset = load_dataset(f"vcr-org/VCR-wiki-{lang}-{diff}-test-500")
 
             for i in range(100):
                 # save image
