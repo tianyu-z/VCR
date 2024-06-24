@@ -362,3 +362,25 @@ if __name__ == "__main__":
     #     json_filename="openbmb_MiniCPM-Llama3-V-2_5_easy_en.json",
     #     dataset_handler="vcr-org/VCR-wiki-en-easy-test-100",
     # )
+    # get all the json files in the folder
+    # PATH = "/home/work/VCR/eval_result"
+    # json_files = [f for f in os.listdir(PATH) if f.endswith(".json")]
+    # for json_file in json_files:
+    #     model_id = json_file.split("_")[0]
+    #     if "evaluation_result" in json_file:
+    #         if "_easy_" in json_file:
+    #             if "_en_" in json_file:
+    #                 dataset_handler = "vcr-org/VCR-wiki-en-easy-test-500"
+    #             elif "_zh_" in json_file:
+    #                 dataset_handler = "vcr-org/VCR-wiki-zh-easy-test-500"
+    #         elif "_hard_" in json_file:
+    #             if "_en_" in json_file:
+    #                 dataset_handler = "vcr-org/VCR-wiki-en-hard-test-500"
+    #             elif "_zh_" in json_file:
+    #                 dataset_handler = "vcr-org/VCR-wiki-zh-hard-test-500"
+    #         main(
+    #             model_id=model_id,
+    #             output_path="/home/work/VCR/eval_metrics",
+    #             json_filename=os.path.join(PATH, json_file),
+    #             dataset_handler=dataset_handler,
+    #         )

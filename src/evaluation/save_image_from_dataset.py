@@ -10,11 +10,14 @@ if __name__ == "__main__":
         "--output_path",
         type=str,
         help="folder path",
+        default="test_500",
     )
     args = parser.parse_args()
     for lang in ["en", "zh"]:
         for diff in ["easy", "hard"]:
-            dataset = load_dataset(f"vcr-org/VCR-wiki-{lang}-{diff}-test-500")
+            if not os.path.exists(f"{args.output_path}/{lang}_{diff}"):
+                os.makedirs(f"{args.output_path}/{lang}_{diff}")
+            dataset = load_dataset(f"vcr-org/VCR-wiki-{lang}-{diff}-test-500")["test"]
 
             for i in range(500):
                 # save image

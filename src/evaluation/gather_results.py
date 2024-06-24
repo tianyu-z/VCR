@@ -1,8 +1,6 @@
 import json
 import glob
-import random
 import numpy as np
-from tqdm import tqdm
 import argparse
 import csv
 
@@ -47,6 +45,8 @@ def dicts2csv(list_of_dicts, name_of_dicts, output_csv_path):
         for key in keys:
             row = [key] + [data[key] for data in all_data]
             writer.writerow(row)
+    # close writer
+    file.close()
 
 
 def get_score(data, target_domain, target_metric_name, start, end, bootstrap=False):
@@ -104,22 +104,23 @@ def bootstrap_std(data, n_bootstrap=1000, ci=0.95):
 
 def main(jsons_path, bootstrap):
     data = read_json_files(jsons_path)
-    if bootstrap:
-        std_list = []
-        lower_bound_list = []
-        upper_bound_list = []
-
-    mean_list = []
 
     col_names = [
         "res_stacked_image",
         "res_only_it_image",
-        "res_only_it_image_small",
+        # "res_only_it_image_small",
     ]
-    metric_names = ["exact_match", "precision", "recall", "f1", "jaccard", "rouge1"]
+    # metric_names = ["exact_match", "precision", "recall", "f1", "jaccard", "rouge1"]
+    metric_names = ["exact_match", "jaccard"]
     start = 0
     end = 100
     for metric_name in metric_names:
+        if bootstrap:
+            std_list = []
+            lower_bound_list = []
+            upper_bound_list = []
+
+        mean_list = []
         for target_domain in col_names:
             mean, std, lower_bound, upper_bound = get_score(
                 data, target_domain, metric_name, start, end, bootstrap=bootstrap
@@ -156,5 +157,5 @@ def main(jsons_path, bootstrap):
 
 # print(get_score(data, target_domain, target_metric_name))
 if __name__ == "__main__":
-    # main(args.jsons_path, args.bootstrap)
-    main("/home/mila/t/tianyu.zhang/scratch/VCR", True)
+    main(args.jsons_path, args.bootstrap)
+    # main("/home/work/VCR/eval_metrics", True)
