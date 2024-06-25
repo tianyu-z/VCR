@@ -19,6 +19,7 @@
 
 
 # 新闻
+- 🔥🔥🔥 **[2024-06-24]** 我们更新了我们的 arXiv 论文。现在，我们有来自 Claude 3.5 Sonnet、Claude 3 Opus、GPT-4o、GPT-4-Turbo、Qwen-VL-Max、Reka Core 和 Gemini-1.5-pro 的结果。评估脚本也已发布，请查看 `src/evaluation/closed_source_eval.py`。
 - 🔥🔥🔥 **[2024-06-15]** 我们发布了torch框架下的VCR变换，可以为任意图像-文本对生成带有嵌入文本的VCR图像。此变换可作为VLMs中的预训练任务之一。
 - 🔥🔥🔥 **[2024-06-13]** 我们发布了开源模型、闭源模型以及创建数据集流程的评估代码。
 - 🔥🔥🔥 **[2024-06-12]** 我们已将VCR-wiki评估过程整合到[lmms-eval](https://github.com/EvolvingLMMs-Lab/lmms-eval)框架中。现在用户可以使用一行命令运行模型在VCR-wiki测试数据集上的评估。
@@ -105,17 +106,20 @@ python3 gather_results.py --jsons_path .
 ```
 
 ### 闭源模型评估
-我们在 `evaluation` 文件夹中提供了闭源模型的评估脚本：`GPT-4o`，`GPT-4-Turbo`，`Claude-3-Opus`。
+我们提供了闭源模型评估脚本，位于 `src/evaluation/closed_source_eval.py`。
 
-你需要一个 API 密钥，一个预先保存的测试数据集，并指定保存数据的路径。
+你需要一个 API Key、一个预先保存的测试数据集，并指定保存论文数据的路径
 ```bash
 pip install -r requirements.txt
 cd src/evaluation
-# 将测试数据集保存到指定路径
+# [下载图片以在本地推理选项1] 使用 huggingface 的脚本将测试数据集保存到指定路径
 python3 save_image_from_dataset.py --output_path .
+# [下载图片以在本地推理选项2] 使用 github 仓库将测试数据集保存到指定路径
+# 以 en-easy-test-500 为例
+git clone https://github.com/tianyu-z/VCR-wiki-en-easy-test-500.git
 
-# 推断 在评估脚本中放入您的 API 密钥和图像路径（例如 gpt-4o.py）
-python3 gpt-4o.py
+# 如果你想通过本地上传图像推理，请通过 --image_path "path_to_image" 指定图片路径，否则，脚本将从 github 仓库流式传输图片
+python3 closed_source_eval.py --model_id gpt4o --dataset_handler "VCR-wiki-en-easy-test-500" --api_key "Your_API_Key"
 
 # 评估结果并将评估指标保存为 {model_id}_{difficulty}_{language}_evaluation_result.json
 python3 evaluation_metrics.py --model_id gpt4o --output_path . --json_filename "gpt4o_en_easy.json" --dataset_handler "vcr-org/VCR-wiki-en-easy-test"

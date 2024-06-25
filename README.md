@@ -18,6 +18,7 @@
 </div>
 
 # News
+- 🔥🔥🔥 **[2024-06-24]** We update our arXiv paper. Now, we have results from Claude 3.5 Sonnet, Claude 3 Opus, GPT-4o, GPT-4-Turbo, Qwen-VL-Max, Reka Core and Gemini-1.5-pro. The evaluation script is also released. Please check `src/evaluation/closed_source_eval.py`.
 - 🔥🔥🔥 **[2024-06-15]** We release the VCR transform in torch so that given any image-text pairs, we can generate the VCR images with text embedded in it. This transform can be used as one of the pretrain task within VLMs.
 - 🔥🔥🔥 **[2024-06-13]** We release the evaluation codes for open-source models, closed-source models and the pipeline of creating the dataset.
 - 🔥🔥🔥 **[2024-06-12]** We have incorperated the VCR-wiki evaluation process in [lmms-eval](https://github.com/EvolvingLMMs-Lab/lmms-eval) framework. Now, users can use one line command to run the evaluation of models on the VCR-wiki test datasets.
@@ -85,7 +86,7 @@ We support open-source model_id:
 "THUDM/cogvlm2-llama3-chat-19B",
 "echo840/Monkey-Chat",]
 ```
-For the models not on list, they are not intergated with huggingface, please refer to their github repo to create the evaluation pipeline.
+For the models not on list, they are not intergated with huggingface, please refer to their github repo to create the evaluation pipeline. Examples of the inference logic are in `src/evaluation/inference.py`
 
 ```bash
 pip install -r requirements.txt
@@ -102,20 +103,23 @@ python3 gather_results.py --jsons_path .
 ```
 
 ### Close-source evaluation
-We provide the evaluation script for the close-source model: `GPT-4o`, `GPT-4-Turbo`, `Claude-3-Opus` in the `evaluation` folder.
+We provide the evaluation script for the close-source models in `src/evaluation/closed_source_eval.py`.
 
 You need an API Key, a pre-saved testing dataset and specify the path of the data saving the paper
 ```bash
 pip install -r requirements.txt
 cd src/evaluation
-# save the testing dataset to the path
+# [download images to inference locally option 1] save the testing dataset to the path using script from huggingface
 python3 save_image_from_dataset.py --output_path .
+# [download images to inference locally option 2] save the testing dataset to the path using github repo
+# use en-easy-test-500 as an example
+git clone https://github.com/tianyu-z/VCR-wiki-en-easy-test-500.git
 
-# Inference Put your API key and Image Path in the evaluation script (e.g. gpt-4o.py)
-python3 gpt-4o.py
+# specify your image path if you would like to inference using the image stored locally by --image_path "path_to_image", otherwise, the script will streaming the images from github repo
+python3 closed_source_eval.py --model_id gpt4o --dataset_handler "VCR-wiki-en-easy-test-500" --api_key "Your_API_Key"
 
 # Evaluate the results and save the evaluation metrics to {model_id}_{difficulty}_{language}_evaluation_result.json
-python3 evaluation_metrics.py --model_id gpt4o --output_path . --json_filename "gpt4o_en_easy.json" --dataset_handler "vcr-org/VCR-wiki-en-easy-test"
+python3 evaluation_metrics.py --model_id gpt4o --output_path . --json_filename "gpt4o_en_easy.json" --dataset_handler "vcr-org/VCR-wiki-en-easy-test-500"
 
 # To get the mean score of all the `{model_id}_{difficulty}_{language}_evaluation_result.json` in `jsons_path` (and the std, confidence interval if `--bootstrap`) of the evaluation metrics
 python3 gather_results.py --jsons_path .
