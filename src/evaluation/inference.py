@@ -129,6 +129,7 @@ def get_model(model_id, device, dtype, finetune_peft_path=None):
         "Qwen/Qwen-VL-Chat",
         "THUDM/cogvlm2-llama3-chinese-chat-19B",
         "THUDM/cogvlm2-llama3-chat-19B",
+        "THUDM/glm-4v-9b",
     ]:
         if is_finetune:
             model = AutoPeftModelForCausalLMWithResizedWTE.from_pretrained(
@@ -166,6 +167,8 @@ def get_model(model_id, device, dtype, finetune_peft_path=None):
         tokenizer.padding_side = "left"
         tokenizer.pad_token_id = tokenizer.eod_id
         processor = None
+    else:
+        raise ValueError(f"Unsupported model {model_id}")
     return model, tokenizer, processor
 
 
@@ -239,7 +242,7 @@ def inference_single(
     """
     res = {}
     if max_tokens_len is None:
-        max_tokens_len = 512
+        max_tokens_len = 150
     if isinstance(image, str):  # image is a path
         image_id = image
         image = Image.open(image).convert("RGB")
@@ -373,6 +376,21 @@ def inference_single(
             pred[0][input_ids.size(1) :].cpu(), skip_special_tokens=True
         ).strip()
         res[image_id] = response
+    elif model_id == "THUDM/glm-4v-9b":
+        inputs = tokenizer.apply_chat_template(
+            [{"role": "user", "image": image, "content": question}],
+            add_generation_prompt=True,
+            tokenize=True,
+            return_tensors="pt",
+            return_dict=True,
+        ).to(
+            device
+        )  # chat mode
+        gen_kwargs = {"max_length": max_tokens_len, "do_sample": True, "top_k": 1}
+        with torch.no_grad():
+            outputs = model.generate(**inputs, **gen_kwargs)
+            outputs = outputs[:, inputs["input_ids"].shape[1] :]
+            res[image_id] = tokenizer.decode(outputs[0])
     else:
         raise ValueError(f"Unsupported model {model_id}")
     return res
@@ -421,11 +439,11 @@ def inference_single_pipeline(
 
 
 def main(
-    dataset_handler="vcr-org/VCR-wiki-en-easy-test-100",
-    model_id="openbmb/MiniCPM-Llama3-V-2_5",
+    dataset_handler="vcr-org/VCR-wiki-en-hard-test",
+    model_id="THUDM/glm-4v-9b",
     device="cuda",
     dtype="bf16",
-    save_interval=50,  # Save progress every 100 images
+    save_interval=5,  # Save progress every 100 images
     resume=True,  # Whether to resume from the last saved state
     finetune_peft_path=None,
 ):
@@ -508,7 +526,7 @@ def main(
         only_it_image = dataset[image_id]["only_it_image"]
         only_it_image_small = dataset[image_id]["only_it_image_small"]
         toke = tokenizer.encode(dataset[image_id]["caption"])
-        max_tokens_len = len(toke) * 2
+        max_tokens_len = int(len(toke) * 5)
         res_stacked_image.update(
             inference_single(
                 model_id,
