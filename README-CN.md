@@ -70,7 +70,7 @@ VCR挑战模型恢复图像内部分被遮挡的文本，利用像素级提示�
 VCR-wiki包含**211万**英文和**34.6万**中文样例，其来源于维基百科。我们提供了易和难两个版本。初步结果表明，当前的视觉语言模型在该任务上与人类表现相比差距明显。
 
 # Benchmark
-EM 表示 "完全匹配"，Jaccard 表示 "Jaccard 相似度"。封闭源代码和开放源代码中的最佳结果以**粗体**标出。闭源模型基于 500 个测试样本进行评估，而开源模型基于 5000 个测试样本进行评估。
+EM 表示 "完全匹配"，Jaccard 表示 "Jaccard 相似度"。封闭源代码和开放源代码中的最佳结果以**粗体**标出。闭源模型基于 [500 个测试样本](https://huggingface.co/collections/vcr-org/vcr-visual-caption-restoration-500-test-subsets-6667c9efd77c55f2363b34a1)进行评估，而开源模型基于 [5000 个测试样本](https://huggingface.co/collections/vcr-org/vcr-visual-caption-restoration-6661393b1761e2aff7b967b9)进行评估。
 | Model | Size (unknown for closed source) | En Easy EM | En Easy Jaccard | En Hard EM | En Hard Jaccard | Zh Easy EM | Zh Easy Jaccard | Zh Hard EM | Zh Hard Jaccard |
 |---|---|---|---|---|---|---|---|---|---|
 | Claude 3 Opus | - | 62.0 | 77.67 | 37.8 | 57.68 | 0.9 | 11.5 | 0.3 | 9.22 |

@@ -71,7 +71,7 @@ VCR challenges models to restore partially obscured text within images, leveragi
 VCR-wiki comprises **2.11M** English and **346K** Chinese entities sourced from Wikipedia, offered in both easy and hard variants. Initial results indicate that current vision-language models fall short compared to human performance on this task.
 
 # Benchmark
-EM means `"Exact Match"` and Jaccard means `"Jaccard Similarity"`. The best in closed source and open source are highlighted in **bold**. Closed source models are evaluated based on 500 test samples, while open source models are evaluated based on 5000 test samples.
+EM means `"Exact Match"` and Jaccard means `"Jaccard Similarity"`. The best in closed source and open source are highlighted in **bold**. Closed source models are evaluated based on [500 test samples](https://huggingface.co/collections/vcr-org/vcr-visual-caption-restoration-500-test-subsets-6667c9efd77c55f2363b34a1), while open source models are evaluated based on [5000 test samples](https://huggingface.co/collections/vcr-org/vcr-visual-caption-restoration-6661393b1761e2aff7b967b9).
 | Model | Size (unknown for closed source) | En Easy EM | En Easy Jaccard | En Hard EM | En Hard Jaccard | Zh Easy EM | Zh Easy Jaccard | Zh Hard EM | Zh Hard Jaccard |
 |---|---|---|---|---|---|---|---|---|---|
 | Claude 3 Opus | - | 62.0 | 77.67 | 37.8 | 57.68 | 0.9 | 11.5 | 0.3 | 9.22 |
