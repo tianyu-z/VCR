@@ -168,8 +168,8 @@ def get_model(model_id, device, dtype, finetune_peft_path=None):
         tokenizer.pad_token_id = tokenizer.eod_id
         processor = None
     elif model_id == "nyu-visionx/cambrian-34b":
-        # model_path = os.path.expanduser("nyu-visionx/cambrian-34b")
-        model_path = "src/evaluation/cambrian-34b"
+        model_path = os.path.expanduser("nyu-visionx/cambrian-34b")
+        # model_path = "src/evaluation/cambrian-34b"
         from cambrian.mm_utils import (
             get_model_name_from_path,
         )
