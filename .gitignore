@@ -178,3 +178,4 @@ test_500/*
 dev.py
 
 test_script/*
+inference.sh

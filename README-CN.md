@@ -108,7 +108,9 @@ EM 表示 "完全匹配"，Jaccard 表示 "Jaccard 相似度"。封闭源代码�
 "Qwen/Qwen-VL-Chat",
 "THUDM/cogvlm2-llama3-chinese-chat-19B",
 "THUDM/cogvlm2-llama3-chat-19B",
-"echo840/Monkey-Chat",]
+"echo840/Monkey-Chat",
+"THUDM/glm-4v-9b",
+"nyu-visionx/cambrian-34b"]
 ```
 对于未在列表中的模型，它们未与huggingface集成，请参考它们的github仓库创建评估流程。
 

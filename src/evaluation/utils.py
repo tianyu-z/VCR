@@ -7,9 +7,61 @@ from PIL import Image
 from PIL.JpegImagePlugin import JpegImageFile
 from torchvision.transforms.functional import InterpolationMode
 from PIL.Image import Image as type_image
+from cambrian.constants import (
+    IMAGE_TOKEN_INDEX,
+    DEFAULT_IMAGE_TOKEN,
+    DEFAULT_IM_START_TOKEN,
+    DEFAULT_IM_END_TOKEN,
+)
+from cambrian.mm_utils import tokenizer_image_token, process_images
+from cambrian.conversation import conv_templates
 
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
+
+
+def cambrian_process(
+    image, question, tokenizer, image_processor, model_config, model_name
+):
+    if model_name == "cambrian-phi3-3b":
+        conv_mode = "phi3"
+    elif model_name == "cambrian-8b":
+        conv_mode = "llama_3"
+    elif model_name == "cambrian-34b":
+        conv_mode = "chatml_direct"
+    elif model_name == "cambrian-13b":
+        conv_mode = "vicuna_v1"
+    else:
+        raise ValueError(f"Unsupported model name {model_name}")
+
+    qs = question
+
+    if model_config.mm_use_im_start_end:
+        qs = (
+            DEFAULT_IM_START_TOKEN
+            + DEFAULT_IMAGE_TOKEN
+            + DEFAULT_IM_END_TOKEN
+            + "\n"
+            + qs
+        )
+    else:
+        qs = DEFAULT_IMAGE_TOKEN + "\n" + qs
+
+    conv = conv_templates[conv_mode].copy()
+    conv.append_message(conv.roles[0], qs)
+    conv.append_message(conv.roles[1], None)
+    prompt = conv.get_prompt()
+
+    image_size = [image.size]
+    image_tensor = process_images([image], image_processor, model_config)
+
+    input_ids = (
+        tokenizer_image_token(prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt")
+        .unsqueeze(0)
+        .cuda()
+    )
+
+    return input_ids, image_tensor, image_size, prompt
 
 
 def build_transform(input_size):

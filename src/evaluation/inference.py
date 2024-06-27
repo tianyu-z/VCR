@@ -5,7 +5,7 @@ from transformers import AutoModel, AutoTokenizer
 from utils import load_image as load_image_ext
 import torch
 from PIL import Image
-
+import os
 from transformers import AutoProcessor, AutoModelForVision2Seq
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -167,6 +167,18 @@ def get_model(model_id, device, dtype, finetune_peft_path=None):
         tokenizer.padding_side = "left"
         tokenizer.pad_token_id = tokenizer.eod_id
         processor = None
+    elif model_id == "nyu-visionx/cambrian-34b":
+        # model_path = os.path.expanduser("nyu-visionx/cambrian-34b")
+        model_path = "src/evaluation/cambrian-34b"
+        from cambrian.mm_utils import (
+            get_model_name_from_path,
+        )
+        from cambrian.model.builder import load_pretrained_model
+
+        model_name = get_model_name_from_path(model_path)
+        tokenizer, model, processor, _ = load_pretrained_model(
+            model_path, None, model_name
+        )
     else:
         raise ValueError(f"Unsupported model {model_id}")
     return model, tokenizer, processor
@@ -391,6 +403,32 @@ def inference_single(
             outputs = model.generate(**inputs, **gen_kwargs)
             outputs = outputs[:, inputs["input_ids"].shape[1] :]
             res[image_id] = tokenizer.decode(outputs[0])
+    elif model_id == "nyu-visionx/cambrian-34b":
+        from utils import cambrian_process
+
+        input_ids, image_tensor, image_sizes, prompt = cambrian_process(
+            image,
+            question,
+            tokenizer,
+            processor,
+            model.config,
+            model_name=model_id.split("/")[-1],
+        )
+        input_ids = input_ids.to(device=device, non_blocking=True)
+        with torch.inference_mode():
+            output_ids = model.generate(
+                input_ids,
+                images=image_tensor,
+                image_sizes=image_sizes,
+                do_sample=True if 0 > 0 else False,
+                temperature=0,
+                num_beams=1,
+                max_new_tokens=max_tokens_len,
+                use_cache=True,
+            )
+        res[image_id] = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[
+            0
+        ].strip()
     else:
         raise ValueError(f"Unsupported model {model_id}")
     return res
@@ -440,7 +478,7 @@ def inference_single_pipeline(
 
 def main(
     dataset_handler="vcr-org/VCR-wiki-en-hard-test",
-    model_id="THUDM/glm-4v-9b",
+    model_id="nyu-visionx/cambrian-34b",
     device="cuda",
     dtype="bf16",
     save_interval=5,  # Save progress every 100 images
@@ -526,7 +564,7 @@ def main(
         only_it_image = dataset[image_id]["only_it_image"]
         only_it_image_small = dataset[image_id]["only_it_image_small"]
         toke = tokenizer.encode(dataset[image_id]["caption"])
-        max_tokens_len = int(len(toke) * 5)
+        max_tokens_len = int(len(toke) * 2)
         res_stacked_image.update(
             inference_single(
                 model_id,

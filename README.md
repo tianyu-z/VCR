@@ -109,7 +109,9 @@ We support open-source model_id:
 "Qwen/Qwen-VL-Chat",
 "THUDM/cogvlm2-llama3-chinese-chat-19B",
 "THUDM/cogvlm2-llama3-chat-19B",
-"echo840/Monkey-Chat",]
+"echo840/Monkey-Chat",
+"THUDM/glm-4v-9b",
+"nyu-visionx/cambrian-34b"]
 ```
 For the models not on list, they are not intergated with huggingface, please refer to their github repo to create the evaluation pipeline. Examples of the inference logic are in `src/evaluation/inference.py`
 
