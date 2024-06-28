@@ -5,3 +5,7 @@ spacy~=3.7.4
 torch>=2.1.0
 fire~=0.6.0
 torchvision
+# cambrain
+ezcolorlog
+open_clip_torch
+diffusers
