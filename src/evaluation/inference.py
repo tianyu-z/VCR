@@ -477,8 +477,8 @@ def inference_single_pipeline(
 
 
 def main(
-    dataset_handler="vcr-org/VCR-wiki-en-hard-test",
-    model_id="nyu-visionx/cambrian-34b",
+    dataset_handler="vcr-org/VCR-wiki-zh-hard-test",
+    model_id="THUDM/cogvlm2-llama3-chat-19B",
     device="cuda",
     dtype="bf16",
     save_interval=5,  # Save progress every 100 images
