@@ -526,12 +526,12 @@ def main(
         raise ValueError(f"Unsupported difficulty")
 
     if finetune_peft_path is not None:
-        model_id_name = model_id.replace("/", "_")
+        model_id_name = model_id.replace("/", "-")
         finetune_peft_path_name = finetune_peft_path.split("/")[-1]
         model_id_name = f"{model_id_name}_{finetune_peft_path_name}"
         print(f"Eval {finetune_peft_path}")
     else:
-        model_id_name = model_id.replace("/", "_")
+        model_id_name = model_id.replace("/", "-")
 
     output_file = f"{model_id_name}_{difficulty}_{language}.json"
     print(f"Output file: {output_file}")

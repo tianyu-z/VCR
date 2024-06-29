@@ -179,3 +179,7 @@ dev.py
 
 test_script/*
 inference.sh
+image_b.png
+image_a.png
+output.png
+dev_1.py
