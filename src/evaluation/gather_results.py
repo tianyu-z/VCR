@@ -47,6 +47,11 @@ def dicts2csv(list_of_dicts, name_of_dicts, output_csv_path):
             writer.writerow(row)
     # close writer
     file.close()
+    # print the first 2 lines
+    print(f"Results saved to {output_csv_path}. Below are the first 2 lines:")
+    with open(output_csv_path, "r") as file:
+        print(file.readline())
+        print(file.readline())
 
 
 def get_score(data, target_domain, target_metric_name, start, end, bootstrap=False):
@@ -102,8 +107,20 @@ def bootstrap_std(data, n_bootstrap=1000, ci=0.95):
     return std, lower_bound, upper_bound
 
 
-def main(jsons_path, bootstrap):
-    data = read_json_files(jsons_path)
+def main(
+    jsons_path,
+    bootstrap,
+    metric_per_instance=None,
+    start=None,
+    end=None,
+    model_name=None,
+):
+    if metric_per_instance is None:
+        data = read_json_files(jsons_path)
+    else:
+        if model_name is None:
+            model_name = "tmp"
+        data = {f"{model_name}_evaluation_result.json": metric_per_instance}
 
     col_names = [
         "res_stacked_image",
@@ -112,8 +129,7 @@ def main(jsons_path, bootstrap):
     ]
     # metric_names = ["exact_match", "precision", "recall", "f1", "jaccard", "rouge1"]
     metric_names = ["exact_match", "jaccard"]
-    start = 0
-    end = 100
+
     for metric_name in metric_names:
         if bootstrap:
             std_list = []

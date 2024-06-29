@@ -477,13 +477,14 @@ def inference_single_pipeline(
 
 
 def main(
-    dataset_handler="vcr-org/VCR-wiki-zh-hard-test",
+    dataset_handler="vcr-org/VCR-wiki-en-hard-test",
     model_id="THUDM/cogvlm2-llama3-chat-19B",
     device="cuda",
     dtype="bf16",
     save_interval=5,  # Save progress every 100 images
     resume=True,  # Whether to resume from the last saved state
     finetune_peft_path=None,
+    end_index=None,
 ):
     """
     Inference the model on a given dataset.
@@ -497,6 +498,7 @@ def main(
     save_interval (int): Save progress every save_interval images. Default is 50.
     resume (bool): Whether to resume from the last saved state. Default is True.
     finetune_peft_path (str): The path of the finetuned model if any. Default is None.
+    end_index (int): The end index of the dataset. Default is None.
 
     Output:
     json: The inference results.
@@ -532,8 +534,10 @@ def main(
         print(f"Eval {finetune_peft_path}")
     else:
         model_id_name = model_id.replace("/", "-")
-
-    output_file = f"{model_id_name}_{difficulty}_{language}.json"
+    if end_index is not None:
+        output_file = f"{model_id_name}_{difficulty}_{language}_{end_index}.json"
+    else:
+        output_file = f"{model_id_name}_{difficulty}_{language}.json"
     print(f"Output file: {output_file}")
 
     if resume:
@@ -559,7 +563,7 @@ def main(
 
     start_index = len(merged_dict)
 
-    for image_id in tqdm(range(start_index, len(dataset))):
+    for image_id in tqdm(range(start_index, min(end_index, len(dataset)))):
         stacked_image = dataset[image_id]["stacked_image"]
         only_it_image = dataset[image_id]["only_it_image"]
         only_it_image_small = dataset[image_id]["only_it_image_small"]
@@ -624,6 +628,7 @@ def main(
         json.dump(merged_dict, json_file, indent=4, ensure_ascii=False)
 
     print(f"Failed image ids: {failed_image_ids}")
+    return merged_dict, output_file
 
 
 if __name__ == "__main__":

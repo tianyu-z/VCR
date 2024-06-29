@@ -222,7 +222,15 @@ def process_match_single(
 
 
 def process_batch_multiprocessing(
-    model, language, difficulty, folder_path, rouge, json_filename, dataset_handler
+    model,
+    language,
+    difficulty,
+    eval_path,
+    rouge,
+    json_filename,
+    dataset_handler,
+    inference_results,
+    end_index,
 ):
     """
     Process the batch using multiprocessing.
@@ -231,25 +239,28 @@ def process_batch_multiprocessing(
     model (str): The model name.
     language (str): The language of the text. Can be "en" or "zh".
     difficulty (str): The difficulty of the text. Can be "easy", or "hard".
-    folder_path (str): The folder path.
+    eval_path (str): (Only work when json_filename is None.) The path include the jsons you want to calculate metrics.
     rouge (rouge): The rouge metric object.
     json_filename (str): The JSON filename. If specified, the language and difficulty will be ignored.
                     If not specified, the language and difficulty will be used to find the JSON filename.
     dataset_handler (str): The dataset handler of HF.
+    output_path (str): The output path of evaluation result.
+    inference_results (dict): The dictionary containing the inference results. If this is not None, the json file will be ignored.
+    end_index (int): The end index of the dataset to process.
     """
     dataset = load_dataset(dataset_handler)["test"]
-
-    # Find the JSON filename that includes all search strings
-    if json_filename is None:
-        match_strings = [model.replace("/", "_"), language, difficulty]
-        json_filename = find_json_filename_includes(folder_path, match_strings)
-
+    if inference_results is None:
+        # Find the JSON filename that includes all search strings
         if json_filename is None:
-            print(f"JSON file not found for {match_strings}")
-            return
+            match_strings = [model.replace("/", "-"), language, difficulty]
+            json_filename = find_json_filename_includes(eval_path, match_strings)
 
-    # Read JSON into a dictionary
-    inference_results = read_json_into_dict(json_filename)
+            if json_filename is None:
+                print(f"JSON file not found for {match_strings}")
+                return
+
+        # Read JSON into a dictionary
+        inference_results = read_json_into_dict(json_filename)
 
     # Initialize overall_result dictionary
     overall_result = {
@@ -261,7 +272,7 @@ def process_batch_multiprocessing(
                 "res_only_it_image_small",
             ]
         }
-        for image_id in range(len(dataset))
+        for image_id in range(min(end_index, len(dataset)))
     }
     language = language.replace("_", "")
     difficulty = difficulty.replace("_", "")
@@ -272,7 +283,7 @@ def process_batch_multiprocessing(
     progress_queue = manager.Queue()
     results = []
 
-    for image_id in range(0, len(dataset)):
+    for image_id in range(min(end_index, len(dataset))):
         results.append(
             pool.apply_async(
                 process_match_single,
@@ -304,16 +315,27 @@ def process_batch_multiprocessing(
     return overall_result
 
 
-def main(model_id, output_path, json_filename, dataset_handler):
+def main(
+    model_id,
+    eval_path,
+    output_path,
+    json_filename,
+    dataset_handler,
+    inference_results,
+    end_index=None,
+):
     """
     Main function to process the batch.
 
     Parameters:
     model_id (str): The model_id name.
+    eval_path (str): (Only work when json_filename is None.) The path include the jsons you want to calculate metrics.
     output_path (str): The output path of evaluation result.
     json_filename (str): The JSON filename. If specified, the language and difficulty will be ignored.
                     If not specified, the language and difficulty will be used to find the JSON filename.
     dataset_handler (str): The dataset handler of HF.
+    inference_results (dict): The dictionary containing the inference results. If this is not None, the json file will be ignored.
+    end_index (int): The end index of the dataset to process.
     """
     rouge = load("rouge", experiment_id=experiment_id)
     if "en" in dataset_handler:
@@ -334,26 +356,33 @@ def main(model_id, output_path, json_filename, dataset_handler):
         model_id,
         matcher(language),
         matcher(difficulty),
-        output_path,
+        eval_path,
         rouge,
         json_filename,
         dataset_handler,
+        inference_results,
+        end_index,
     )
-    modelname = model_id.replace("/", "_")
+    modelname = model_id.replace("/", "-")
+    if end_index is not None:
+        filename = (
+            f"{modelname}_{language}_{difficulty}_evaluation_result_{end_index}.json"
+        )
+    else:
+        filename = f"{modelname}_{language}_{difficulty}_evaluation_result.json"
     with open(
-        os.path.join(
-            output_path, f"{modelname}_{language}_{difficulty}_evaluation_result.json"
-        ),
+        os.path.join(output_path, filename),
         "w",
         encoding="utf-8",
     ) as f:
         json.dump(overall_result, f, ensure_ascii=False, indent=4)
-    return
+    return overall_result
 
 
 if __name__ == "__main__":
     main(
         model_id=args.model_id,
+        eval_path=None,
         output_path=args.output_path,
         json_filename=args.json_filename,
         dataset_handler=args.dataset_handler,
@@ -371,19 +400,19 @@ if __name__ == "__main__":
     # for json_file in json_files:
     #     model_id = json_file.split("_")[0]
     #     if "THUDM" in json_file:
-    #         if "_easy_" in json_file:
+    #         if "_easy" in json_file:
     #             if "_en" in json_file:
     #                 dataset_handler = "vcr-org/VCR-wiki-en-easy-test"
     #             elif "_zh" in json_file:
     #                 dataset_handler = "vcr-org/VCR-wiki-zh-easy-test"
-    #         elif "_hard_" in json_file:
+    #         elif "_hard" in json_file:
     #             if "_en" in json_file:
     #                 dataset_handler = "vcr-org/VCR-wiki-en-hard-test"
     #             elif "_zh" in json_file:
     #                 dataset_handler = "vcr-org/VCR-wiki-zh-hard-test"
     #         main(
     #             model_id=model_id,
-    #             output_path="/home/work/VCR/eval_metrics",
+    #             output_path="/home/mila/t/tianyu.zhang/scratch/VCR/eval_metrics",
     #             json_filename=os.path.join(PATH, json_file),
     #             dataset_handler=dataset_handler,
     #         )

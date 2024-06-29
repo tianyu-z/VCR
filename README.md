@@ -120,18 +120,12 @@ For the models not on list, they are not intergated with huggingface, please ref
 ```bash
 pip install -r requirements.txt
 # We use HuggingFaceM4/idefics2-8b and vcr_wiki_en_easy as an example
-# Inference from the VLMs and save the results to {model_id}_{difficulty}_{language}.json
 cd src/evaluation
-python3 inference.py --dataset_handler "vcr-org/VCR-wiki-en-easy-test" --model_id "HuggingFaceM4/idefics2-8b" --device "cuda" --dtype "bf16" --save_interval 50 --resume True
-
 # Evaluate the results and save the evaluation metrics to {model_id}_{difficulty}_{language}_evaluation_result.json
-python3 evaluation_metrics.py --model_id HuggingFaceM4/idefics2-8b --output_path . --json_filename "HuggingFaceM4_idefics2-8b_en_easy.json" --dataset_handler "vcr-org/VCR-wiki-en-easy-test"
-
-# To get the mean score of all the `{model_id}_{difficulty}_{language}_evaluation_result.json` in `jsons_path` (and the std, confidence interval if `--bootstrap`) of the evaluation metrics
-python3 gather_results.py --jsons_path .
+python3 evaluation_pipeline.py --dataset_handler "vcr-org/VCR-wiki-en-easy-test" --model_id HuggingFaceM4/idefics2-8b --output_path . --bootstrap --end_index 5000
 ```
 
-### Close-source evaluation
+### Close-source evaluation (using API)
 We provide the evaluation script for the close-source models in `src/evaluation/closed_source_eval.py`.
 
 You need an API Key, a pre-saved testing dataset and specify the path of the data saving the paper

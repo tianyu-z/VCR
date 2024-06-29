@@ -19,6 +19,7 @@
 
 
 # 新闻
+- 🔥🔥🔥 **[2024-06-29]** 我们在《机器之心》微信公众号的投稿[被刊登](https://mp.weixin.qq.com/s/Zy-kM3bvN-1oHondw1VLzw)
 - 🔥🔥🔥 **[2024-06-24]** 我们更新了我们的 arXiv 论文。现在，我们有来自 Claude 3.5 Sonnet、Claude 3 Opus、GPT-4o、GPT-4-Turbo、Qwen-VL-Max、Reka Core 和 Gemini-1.5-pro 的结果。评估脚本也已发布，请查看 `src/evaluation/closed_source_eval.py`。
 - 🔥🔥🔥 **[2024-06-15]** 我们发布了torch框架下的VCR变换，可以为任意图像-文本对生成带有嵌入文本的VCR图像。此变换可作为VLMs中的预训练任务之一。
 - 🔥🔥🔥 **[2024-06-13]** 我们发布了开源模型、闭源模型以及创建数据集流程的评估代码。
@@ -119,20 +120,9 @@ EM 表示 "完全匹配"，Jaccard 表示 "Jaccard 相似度"。封闭源代码�
 ```bash
 pip install -r requirements.txt
 # 我们以 Hugging FaceM4/idefics2-8b 模型为例
-python run_eval.py \
-  --model_id HuggingFaceM4/idefics2-8b \
-  --data_path datasets/vcr-org/VCR-wiki-en-easy/ \
-  --max_new_tokens 20 \
-  --image_input_size 256
-# 从视觉语言模型 (VLMs) 推断并将结果保存为 {model_id}_{difficulty}_{language}.json
 cd src/evaluation
-python3 inference.py --dataset_handler "vcr-org/VCR-wiki-en-easy-test" --model_id "HuggingFaceM4/idefics2-8b" --device "cuda" --dtype "bf16" --save_interval 50 --resume True
-
 # 评估结果并将评估指标保存为 {model_id}_{difficulty}_{language}_evaluation_result.json
-python3 evaluation_metrics.py --model_id HuggingFaceM4/idefics2-8b --output_path . --json_filename "HuggingFaceM4_idefics2-8b_en_easy.json" --dataset_handler "vcr-org/VCR-wiki-en-easy-test"
-
-# 获取 `jsons_path` 中所有 `{model_id}_{difficulty}_{language}_evaluation_result.json` 的平均分数（如果使用 `--bootstrap`，则会保存标准差以及置信区间）的评估指标
-python3 gather_results.py --jsons_path .
+python3 evaluation_pipeline.py --dataset_handler "vcr-org/VCR-wiki-en-easy-test" --model_id HuggingFaceM4/idefics2-8b --output_path . --bootstrap --end_index 5000
 ```
 
 ### 闭源模型评估
