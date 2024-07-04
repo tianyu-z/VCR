@@ -103,7 +103,7 @@ def get_model(model_id, device, dtype, finetune_peft_path=None):
         tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
         model.eval()
         processor = None
-    elif model_id == "internlm/internlm-xcomposer2-vl-7b":
+    elif model_id in ["internlm/internlm-xcomposer2-vl-7b", "internlm/internlm-xcomposer2-4khd-7b", "internlm/internlm-xcomposer2d5-7b"]:
         if is_finetune:
             raise ValueError(f"Fine-tuning is not supported for {model_id}")
         from internlm.modeling_internlm_xcomposer2 import (
@@ -286,7 +286,7 @@ def inference_single(
             res[image_id] = model.chat(
                 tokenizer, pixel_values, question, generation_config
             )
-    elif model_id == "internlm/internlm-xcomposer2-vl-7b":
+    elif model_id in ["internlm/internlm-xcomposer2-vl-7b", "internlm/internlm-xcomposer2-4khd-7b"]:
         query = f"<ImageHere>{question}"
         with torch.no_grad():
             res[image_id], _ = model.chat(
@@ -297,6 +297,9 @@ def inference_single(
                 do_sample=False,
                 max_new_tokens=max_tokens_len,
             )
+    elif model_id in ["internlm/internlm-xcomposer2d5-7b"]:
+        with torch.autocast(device_type='cuda', dtype=torch.float16):
+            res[image_id], _ = model.chat(tokenizer, question, [image], do_sample=False, num_beams=3, use_meta=True)
     elif model_id == "HuggingFaceM4/idefics2-8b":
         messages = [
             {
