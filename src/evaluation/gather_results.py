@@ -4,18 +4,7 @@ import numpy as np
 import argparse
 import csv
 
-parser = argparse.ArgumentParser(description="Evaluation pipeline of VCR.")
-parser.add_argument(
-    "--jsons_path",
-    type=str,
-    help="path to the folder containing all the json files",
-)
-parser.add_argument(
-    "--bootstrap",
-    action="store_true",
-    help="also calculate the bootstrap confidence interval",
-)
-args = parser.parse_args()
+
 
 
 # get all json under a folder and return a dict with key as filename and value as json content
@@ -173,5 +162,17 @@ def main(
 
 # print(get_score(data, target_domain, target_metric_name))
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Evaluation pipeline of VCR.")
+    parser.add_argument(
+        "--jsons_path",
+        type=str,
+        help="path to the folder containing all the json files",
+    )
+    parser.add_argument(
+        "--bootstrap",
+        action="store_true",
+        help="also calculate the bootstrap confidence interval",
+    )
+    args = parser.parse_args()
     main(args.jsons_path, args.bootstrap)
     # main("/home/work/VCR/eval_metrics", True)

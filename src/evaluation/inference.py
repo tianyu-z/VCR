@@ -91,6 +91,7 @@ def get_model(model_id, device, dtype, finetune_peft_path=None):
     if model_id in [
         "openbmb/MiniCPM-Llama3-V-2_5",
         "OpenGVLab/InternVL-Chat-V1-5",
+        "OpenGVLab/InternVL2-26B"
     ]:
 
         if is_finetune:
@@ -274,7 +275,7 @@ def inference_single(
                 temperature=0.7,
                 max_new_tokens=max_tokens_len,
             )
-    elif model_id == "OpenGVLab/InternVL-Chat-V1-5":
+    elif model_id in ["OpenGVLab/InternVL-Chat-V1-5", "OpenGVLab/InternVL2-26B"]:
         pixel_values = load_image_ext(image, max_num=6).to(dtype).cuda()
         generation_config = dict(
             num_beams=1,
@@ -633,3 +634,4 @@ def main(
 
 if __name__ == "__main__":
     Fire(main)
+

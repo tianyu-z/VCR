@@ -21,29 +21,7 @@ import multiprocessing
 import uuid
 
 
-experiment_id = str(uuid.uuid4())
-parser = argparse.ArgumentParser(description="Evaluation pipeline of VCR.")
-parser.add_argument(
-    "--model_id",
-    type=str,
-    help="model name of from huggingface model hub",
-)
-parser.add_argument(
-    "--output_path",
-    type=str,
-    help="folder path",
-)
-parser.add_argument(
-    "--json_filename",
-    type=str,
-    help="json filename",
-)
-parser.add_argument(
-    "--dataset_handler",
-    type=str,
-    help="dataset handler",
-)
-args = parser.parse_args()
+
 
 # Download the English and Chinese models
 try:
@@ -380,6 +358,29 @@ def main(
 
 
 if __name__ == "__main__":
+    experiment_id = str(uuid.uuid4())
+    parser = argparse.ArgumentParser(description="Evaluation pipeline of VCR.")
+    parser.add_argument(
+        "--model_id",
+        type=str,
+        help="model name of from huggingface model hub",
+    )
+    parser.add_argument(
+        "--output_path",
+        type=str,
+        help="folder path",
+    )
+    parser.add_argument(
+        "--json_filename",
+        type=str,
+        help="json filename",
+    )
+    parser.add_argument(
+        "--dataset_handler",
+        type=str,
+        help="dataset handler",
+    )
+    args = parser.parse_args()
     main(
         model_id=args.model_id,
         eval_path=None,
