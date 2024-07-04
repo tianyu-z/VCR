@@ -92,7 +92,7 @@ EM means `"Exact Match"` and Jaccard means `"Jaccard Similarity"`. The best in c
 | Idefics2 | 8B | 15.75 | 31.97 | 0.65 | 9.93 | - | - | - | - |
 | InternLM-XComposer2-VL | 7B | 46.64 | 70.99 | 0.7 | 12.51 | 0.27 | 12.32 | 0.07 | 8.97 |
 | InternVL-V1.5 | 25.5B | 14.65 | 51.42 | 1.99 | 16.73 | 4.78 | 26.43 | 0.03 | 8.46 |
-| InternVL-V2 | 25.5B | 74.51 | 86.74 | 6.18 | 24.52 | 9.02 | 32.50 | 0.05 | 9.49 |
+| InternVL-V2 | 26B | 74.51 | 86.74 | 6.18 | 24.52 | 9.02 | 32.50 | 0.05 | 9.49 |
 | MiniCPM-V2.5 | 8B | 31.81 | 53.24 | 1.41 | 11.94 | 4.1 | 18.03 | 0.09 | 7.39 |
 | Monkey | 7B | 50.66 | 67.6 | 1.96 | 14.02 | 0.62 | 8.34 | 0.12 | 6.36 |
 | Qwen-VL | 7B | 49.71 | 69.94 | 2.0 | 15.04 | 0.04 | 1.5 | 0.01 | 1.17 |
@@ -108,13 +108,16 @@ We support open-source model_id:
 ["openbmb/MiniCPM-Llama3-V-2_5",
 "OpenGVLab/InternVL-Chat-V1-5",
 "internlm/internlm-xcomposer2-vl-7b",
+"internlm/internlm-xcomposer2-4khd-7b",
+"internlm/internlm-xcomposer2d5-7b",
 "HuggingFaceM4/idefics2-8b",
 "Qwen/Qwen-VL-Chat",
 "THUDM/cogvlm2-llama3-chinese-chat-19B",
 "THUDM/cogvlm2-llama3-chat-19B",
 "echo840/Monkey-Chat",
 "THUDM/glm-4v-9b",
-"nyu-visionx/cambrian-34b"]
+"nyu-visionx/cambrian-34b",
+"OpenGVLab/InternVL2-26B"]
 ```
 For the models not on list, they are not intergated with huggingface, please refer to their github repo to create the evaluation pipeline. Examples of the inference logic are in `src/evaluation/inference.py`
 
