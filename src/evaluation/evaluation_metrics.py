@@ -21,7 +21,7 @@ import multiprocessing
 import uuid
 
 
-
+experiment_id = str(uuid.uuid4())
 
 # Download the English and Chinese models
 try:
@@ -358,7 +358,7 @@ def main(
 
 
 if __name__ == "__main__":
-    experiment_id = str(uuid.uuid4())
+
     parser = argparse.ArgumentParser(description="Evaluation pipeline of VCR.")
     parser.add_argument(
         "--model_id",
