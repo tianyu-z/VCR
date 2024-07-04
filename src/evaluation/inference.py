@@ -110,13 +110,27 @@ def get_model(model_id, device, dtype, finetune_peft_path=None):
     ]:
         if is_finetune:
             raise ValueError(f"Fine-tuning is not supported for {model_id}")
-        from internlm.modeling_internlm_xcomposer2 import (
-            InternLMXComposer2ForCausalLM,
-        )
+        if model_id == "internlm/internlm-xcomposer2-vl-7b":
+            from internlm2.modeling_internlm_xcomposer2 import (
+                InternLMXComposer2ForCausalLM,
+            )
 
-        model = InternLMXComposer2ForCausalLM.from_pretrained(
-            model_id, trust_remote_code=True, torch_dtype=dtype
-        )
+            model = InternLMXComposer2ForCausalLM.from_pretrained(
+                model_id, trust_remote_code=True, torch_dtype=dtype
+            )
+        elif model_id == "internlm/internlm-xcomposer2-4khd-7b":
+            from internlm2r4k.modeling_internlm_xcomposer2 import (
+                InternLMXComposer2ForCausalLM,
+            )
+
+            model = InternLMXComposer2ForCausalLM.from_pretrained(
+                model_id, trust_remote_code=True, torch_dtype=dtype
+            )
+        elif model_id == "internlm/internlm-xcomposer2d5-7b":
+            model = AutoModelForCausalLM.from_pretrained(
+                model_id, torch_dtype=dtype, trust_remote_code=True
+            )
+
         model = model.to(device=device)
         tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
         model.eval()
@@ -497,13 +511,13 @@ def inference_single_pipeline(
 
 def main(
     dataset_handler="vcr-org/VCR-wiki-en-hard-test",
-    model_id="THUDM/cogvlm2-llama3-chat-19B",
+    model_id="internlm/internlm-xcomposer2-4khd-7b",
     device="cuda",
     dtype="bf16",
     save_interval=5,  # Save progress every 100 images
     resume=True,  # Whether to resume from the last saved state
     finetune_peft_path=None,
-    end_index=None,
+    end_index=5000,
 ):
     """
     Inference the model on a given dataset.
@@ -545,7 +559,7 @@ def main(
         difficulty = "hard"
     else:
         raise ValueError(f"Unsupported difficulty")
-
+    dataset = load_dataset(dataset_handler)["test"]
     if finetune_peft_path is not None:
         model_id_name = model_id.replace("/", "-")
         finetune_peft_path_name = finetune_peft_path.split("/")[-1]
@@ -555,8 +569,11 @@ def main(
         model_id_name = model_id.replace("/", "-")
     if end_index is not None:
         output_file = f"{model_id_name}_{difficulty}_{language}_{end_index}.json"
+        end_index_ = min(end_index, len(dataset))
+
     else:
         output_file = f"{model_id_name}_{difficulty}_{language}.json"
+        end_index_ = len(dataset)
     print(f"Output file: {output_file}")
 
     if resume:
@@ -570,8 +587,6 @@ def main(
     else:
         merged_dict = {}
 
-    dataset = load_dataset(dataset_handler)["test"]
-
     model, tokenizer, processor = get_model(model_id, device, dtype, finetune_peft_path)
 
     question = get_question(language)
@@ -582,7 +597,7 @@ def main(
 
     start_index = len(merged_dict)
 
-    for image_id in tqdm(range(start_index, min(end_index, len(dataset)))):
+    for image_id in tqdm(range(start_index, end_index_)):
         stacked_image = dataset[image_id]["stacked_image"]
         only_it_image = dataset[image_id]["only_it_image"]
         only_it_image_small = dataset[image_id]["only_it_image_small"]

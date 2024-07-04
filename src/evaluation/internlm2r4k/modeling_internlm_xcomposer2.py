@@ -1,9 +1,6 @@
-# # Copyright (c) InternLM. All rights reserved.
+# Copyright (c) The InternLM team and The HuggingFace Inc. team. All rights reserved.
 #
-# This code is based on EleutherAI's GPT-NeoX library and the GPT-NeoX
-# and OPT implementations in this library. It has been modified from its
-# original forms to accommodate minor architectural differences compared
-# to GPT-NeoX and OPT used by the Meta AI team that trained the model.
+# This code is based on transformers/src/transformers/models/llama/modeling_llama.py
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """PyTorch InternLMXComposer2 model."""
 import copy
 import queue
@@ -34,7 +32,6 @@ from transformers.utils import (
     add_start_docstrings_to_model_forward,
     replace_return_docstrings,
 )
-from PIL.Image import Image as type_image
 
 try:
     from transformers.generation.streamers import BaseStreamer
@@ -42,12 +39,14 @@ except:  # noqa # pylint: disable=bare-except
     BaseStreamer = None
 
 from .build_mlp import build_vision_projector, build_vision_tower
+from .ixc_utils import HD_transform
 from .configuration_internlm_xcomposer2 import InternLMXcomposer2Config
 from .modeling_internlm2 import (
     InternLM2_INPUTS_DOCSTRING,
     InternLM2Model,
     InternLM2PreTrainedModel,
 )
+from PIL.Image import Image as type_image
 
 _CONFIG_FOR_DOC = "InternLMXcomposer2Config"
 
@@ -68,16 +67,14 @@ class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
         print(f"Set max length to {self.max_length}")
         # Initialize weights and apply final processing
         self.post_init()
+        self.plora_glb_GN = nn.Parameter(torch.zeros([1, 1, 4096]))
+        self.plora_sub_GN = nn.Parameter(torch.zeros([1, 1, 1, 4096]))
 
         self.vit = build_vision_tower()
         self.vision_proj = build_vision_projector()
 
         self.vis_processor = transforms.Compose(
             [
-                transforms.Resize(
-                    (config.img_size, config.img_size),
-                    interpolation=InterpolationMode.BICUBIC,
-                ),
                 transforms.ToTensor(),
                 transforms.Normalize(
                     (0.48145466, 0.4578275, 0.40821073),
@@ -117,23 +114,49 @@ class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
         embs = self.model.tok_embeddings(token)
         return embs
 
-    def encode_img(self, image):
+    def encode_img(self, image, hd_num=25):
         if image is None:
             return None
         if isinstance(image, str):
             image = Image.open(image).convert("RGB")
+            image = HD_transform(image, hd_num=hd_num)
             image = self.vis_processor(image).unsqueeze(0).to(self.device)
+
+        img_embeds, atts_img, img_target = self.img2emb(image)
+        return img_embeds
+
+    def encode_img(self, image, hd_num=25):
+        if image is None:
+            return None
+        if isinstance(image, str):
+            image = Image.open(image).convert("RGB")
+            image = HD_transform(image, hd_num=hd_num)
+            image = (
+                self.vis_processor(image).unsqueeze(0).to(self.device).to(self.dtype)
+            )
         else:
             if isinstance(image, type_image):
-                image = self.vis_processor(image).unsqueeze(0).to(self.device)
+                image = HD_transform(image, hd_num=hd_num)
+                image = (
+                    self.vis_processor(image)
+                    .unsqueeze(0)
+                    .to(self.device)
+                    .to(self.dtype)
+                )
             else:
+                print(f"Invalid input type {type(image)}")
                 assert isinstance(image, torch.Tensor), "Invalid input type"
 
         img_embeds, atts_img, img_target = self.img2emb(image)
         return img_embeds
 
     def img2emb(self, image):
-        img_embeds = self.vision_proj(self.vit(image.to(self.device, dtype=self.dtype)))
+        img_embeds, img_split = self.vit([image], self.plora_glb_GN, self.plora_sub_GN)
+        if len(img_split) > 1:
+            print("Batch Size >1 is not supported.")
+            assert 0
+        # print (img_embeds.shape)
+        img_embeds = self.vision_proj(img_embeds)
         atts_img = torch.ones(img_embeds.size()[:-1], dtype=torch.long).to(
             img_embeds.device
         )
@@ -519,10 +542,12 @@ class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
         tokenizer,
         query: str,
         image: torch.Tensor = None,
+        hd_num: int = 25,
         history: List[Tuple[str, str]] = [],
         streamer: Optional[BaseStreamer] = None,
         max_new_tokens: int = 1024,
         do_sample: bool = True,
+        num_beams: int = 1,
         temperature: float = 1.0,
         top_p: float = 0.8,
         repetition_penalty: float = 1.005,
@@ -536,7 +561,7 @@ class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
             inputs = self.build_inputs(tokenizer, query, history, meta_instruction)
             im_mask = torch.zeros(inputs["input_ids"].shape[:2]).cuda().bool()
         else:
-            image = self.encode_img(image)
+            image = self.encode_img(image, hd_num=hd_num)
             inputs, im_mask = self.interleav_wrap_chat(
                 tokenizer, query, image, history, meta_instruction
             )
@@ -550,6 +575,7 @@ class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
             **inputs,
             streamer=streamer,
             max_new_tokens=max_new_tokens,
+            num_beams=num_beams,
             do_sample=do_sample,
             temperature=temperature,
             top_p=top_p,
@@ -566,84 +592,3 @@ class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
         response = response.split("[UNUSED_TOKEN_145]")[0]
         history = history + [(query, response)]
         return response, history
-
-    @torch.no_grad()
-    def stream_chat(
-        self,
-        tokenizer,
-        query: str,
-        history: List[Tuple[str, str]] = [],
-        max_new_tokens: int = 1024,
-        do_sample: bool = True,
-        temperature: float = 0.8,
-        top_p: float = 0.8,
-        **kwargs,
-    ):
-        """Return a generator in format: (response, history) Eg.
-
-        ('你好，有什么可以帮助您的吗', [('你好', '你好，有什么可以帮助您的吗')]) ('你好，有什么可以帮助您的吗？', [('你好',
-        '你好，有什么可以帮助您的吗？')])
-        """
-        if BaseStreamer is None:
-            raise ModuleNotFoundError(
-                "The version of `transformers` is too low. Please make sure "
-                "that you have installed `transformers>=4.28.0`."
-            )
-
-        response_queue = queue.Queue(maxsize=20)
-
-        class ChatStreamer(BaseStreamer):
-
-            def __init__(self, tokenizer) -> None:
-                super().__init__()
-                self.tokenizer = tokenizer
-                self.queue = response_queue
-                self.query = query
-                self.history = history
-                self.response = ""
-                self.received_inputs = False
-                self.queue.put((self.response, history + [(self.query, self.response)]))
-
-            def put(self, value):
-                if len(value.shape) > 1 and value.shape[0] > 1:
-                    raise ValueError("ChatStreamer only supports batch size 1")
-                elif len(value.shape) > 1:
-                    value = value[0]
-
-                if not self.received_inputs:
-                    # The first received value is input_ids, ignore here
-                    self.received_inputs = True
-                    return
-
-                token = self.tokenizer.decode([value[-1]], skip_special_tokens=True)
-                if token.strip() != "[UNUSED_TOKEN_145]":
-                    self.response = self.response + token
-                    history = self.history + [(self.query, self.response)]
-                    self.queue.put((self.response, history))
-
-            def end(self):
-                self.queue.put(None)
-
-        def stream_producer():
-            return self.chat(
-                tokenizer=tokenizer,
-                query=query,
-                streamer=ChatStreamer(tokenizer=tokenizer),
-                history=history,
-                max_new_tokens=max_new_tokens,
-                do_sample=do_sample,
-                temperature=temperature,
-                top_p=top_p,
-                **kwargs,
-            )
-
-        def consumer():
-            producer = threading.Thread(target=stream_producer)
-            producer.start()
-            while True:
-                res = response_queue.get()
-                if res is None:
-                    return
-                yield res
-
-        return consumer()
