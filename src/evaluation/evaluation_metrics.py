@@ -239,7 +239,10 @@ def process_batch_multiprocessing(
 
         # Read JSON into a dictionary
         inference_results = read_json_into_dict(json_filename)
-
+    if end_index is None or len(dataset) < end_index:
+        end_index_ = len(dataset)
+    else:
+        end_index_ = end_index
     # Initialize overall_result dictionary
     overall_result = {
         str(image_id): {
@@ -250,7 +253,7 @@ def process_batch_multiprocessing(
                 "res_only_it_image_small",
             ]
         }
-        for image_id in range(min(end_index, len(dataset)))
+        for image_id in range(end_index_)
     }
     language = language.replace("_", "")
     difficulty = difficulty.replace("_", "")
@@ -261,7 +264,7 @@ def process_batch_multiprocessing(
     progress_queue = manager.Queue()
     results = []
 
-    for image_id in range(min(end_index, len(dataset))):
+    for image_id in range(end_index_):
         results.append(
             pool.apply_async(
                 process_match_single,
@@ -358,7 +361,6 @@ def main(
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(description="Evaluation pipeline of VCR.")
     parser.add_argument(
         "--model_id",
@@ -387,12 +389,16 @@ if __name__ == "__main__":
         output_path=args.output_path,
         json_filename=args.json_filename,
         dataset_handler=args.dataset_handler,
+        inference_results=None,
     )
-    # Example: main(
-    #     "openbmb/MiniCPM-Llama3-V-2_5",
+    # Example:
+    # main(
+    #     "internlm/internlm-xcomposer2-4khd-7b",
+    #     eval_path=None,
     #     output_path=".",
-    #     json_filename="openbmb_MiniCPM-Llama3-V-2_5_easy_en.json",
-    #     dataset_handler="vcr-org/VCR-wiki-en-easy-test-100",
+    #     json_filename="/home/VCR/src/evaluation/internlm-internlm-xcomposer2-4khd-7b_easy_zh_5000.json",
+    #     dataset_handler="vcr-org/VCR-wiki-zh-easy-test",
+    #     inference_results=None,
     # )
 
     # Example: get all the json files in the folder
@@ -413,7 +419,9 @@ if __name__ == "__main__":
     #                 dataset_handler = "vcr-org/VCR-wiki-zh-hard-test"
     #         main(
     #             model_id=model_id,
+    #             eval_path=None,
     #             output_path="/home/mila/t/tianyu.zhang/scratch/VCR/eval_metrics",
     #             json_filename=os.path.join(PATH, json_file),
     #             dataset_handler=dataset_handler,
+    #             inference_results=None
     #         )

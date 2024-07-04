@@ -5,8 +5,6 @@ import argparse
 import csv
 
 
-
-
 # get all json under a folder and return a dict with key as filename and value as json content
 def read_json_files(folder_path):
     json_files = glob.glob(f"{folder_path}/*_evaluation_result.json")
@@ -175,4 +173,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     main(args.jsons_path, args.bootstrap)
-    # main("/home/work/VCR/eval_metrics", True)
+    # main("/home/work/VCR/eval_metrics", True, start=0, end=5000)
