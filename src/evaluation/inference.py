@@ -127,7 +127,11 @@ def get_model(model_id, device, dtype, finetune_peft_path=None):
                 model_id, trust_remote_code=True, torch_dtype=dtype
             )
         elif model_id == "internlm/internlm-xcomposer2d5-7b":
-            model = AutoModelForCausalLM.from_pretrained(
+            from internlm2d5.modeling_internlm_xcomposer2 import (
+                InternLMXComposer2ForCausalLM,
+            )
+
+            model = InternLMXComposer2ForCausalLM.from_pretrained(
                 model_id, torch_dtype=dtype, trust_remote_code=True
             )
 
@@ -320,6 +324,7 @@ def inference_single(
             )
     elif model_id in ["internlm/internlm-xcomposer2d5-7b"]:
         with torch.autocast(device_type="cuda", dtype=dtype):
+            model.tokenizer = tokenizer
             res[image_id], _ = model.chat(
                 tokenizer,
                 question,
@@ -511,7 +516,7 @@ def inference_single_pipeline(
 
 def main(
     dataset_handler="vcr-org/VCR-wiki-en-hard-test",
-    model_id="internlm/internlm-xcomposer2-4khd-7b",
+    model_id="internlm/internlm-xcomposer2d5-7b",
     device="cuda",
     dtype="bf16",
     save_interval=5,  # Save progress every 100 images

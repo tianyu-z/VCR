@@ -15,6 +15,8 @@
 # limitations under the License.
 
 """PyTorch InternLMXComposer2 model."""
+import os
+import re
 import copy
 import queue
 import threading
@@ -23,6 +25,8 @@ from typing import List, Optional, Tuple, Union
 import torch
 import torch.utils.checkpoint
 from PIL import Image
+import numpy as np
+import random
 from torch import nn
 from torch.nn import CrossEntropyLoss
 from torchvision import transforms
@@ -32,23 +36,68 @@ from transformers.utils import (
     add_start_docstrings_to_model_forward,
     replace_return_docstrings,
 )
+from transformers import StoppingCriteria, StoppingCriteriaList
+from transformers import AutoModelForCausalLM, AutoTokenizer, set_seed
 
 try:
     from transformers.generation.streamers import BaseStreamer
 except:  # noqa # pylint: disable=bare-except
     BaseStreamer = None
 
+import torchvision.transforms as transforms
+from torchvision.transforms.functional import InterpolationMode
+
 from .build_mlp import build_vision_projector, build_vision_tower
-from .ixc_utils import HD_transform
+from .ixc_utils import Image_transform, Video_transform, load_video, frame2img, get_font
 from .configuration_internlm_xcomposer2 import InternLMXcomposer2Config
 from .modeling_internlm2 import (
     InternLM2_INPUTS_DOCSTRING,
     InternLM2Model,
     InternLM2PreTrainedModel,
 )
-from PIL.Image import Image as type_image
 
 _CONFIG_FOR_DOC = "InternLMXcomposer2Config"
+
+image_extensions = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"}
+video_extensions = {".mp4", ".avi", ".mkv", ".mov", ".wmv"}
+from PIL.Image import Image as type_image
+
+
+class StoppingCriteriaSub(StoppingCriteria):
+
+    def __init__(self, stops=[], encounters=1):
+        super().__init__()
+        self.stops = stops
+
+    def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor):
+        for stop in self.stops:
+            if torch.all((stop == input_ids[0][-len(stop) :])).item():
+                return True
+        return False
+
+
+def get_stopping_criteria(stop_words_ids):
+    stop_words_ids = [torch.tensor([i]).cuda() for i in stop_words_ids]
+    stopping_criteria = StoppingCriteriaList(
+        [StoppingCriteriaSub(stops=stop_words_ids)]
+    )
+    return stopping_criteria
+
+
+def set_random_seed(seed, set_cudnn=False):
+    """Set the random seed for reproducibility.
+
+    Parameters:
+    seed (int): The seed to use for generating random numbers.
+    """
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)  # For multi-GPU.
+    np.random.seed(seed)
+    random.seed(seed)
+    if set_cudnn and torch.backends.cudnn.is_available():
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
 
 
 class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
@@ -62,6 +111,8 @@ class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
         self.vocab_size = config.vocab_size
         self.output = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
         self.tokenizer = None
+        self.hd_num = 25
+        self.font = get_font()
 
         self.max_length = config.max_length
         print(f"Set max length to {self.max_length}")
@@ -114,38 +165,27 @@ class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
         embs = self.model.tok_embeddings(token)
         return embs
 
-    # def encode_img(self, image, hd_num=25):
-    #     if image is None:
-    #         return None
-    #     if isinstance(image, str):
-    #         image = Image.open(image).convert("RGB")
-    #         image = HD_transform(image, hd_num=hd_num)
-    #         image = self.vis_processor(image).unsqueeze(0).to(self.device)
-
-    #     img_embeds, atts_img, img_target = self.img2emb(image)
-    #     return img_embeds
-
     def encode_img(self, image, hd_num=25):
         if image is None:
             return None
         if isinstance(image, str):
-            image = Image.open(image).convert("RGB")
-            image = HD_transform(image, hd_num=hd_num)
-            image = (
-                self.vis_processor(image).unsqueeze(0).to(self.device).to(self.dtype)
-            )
-        else:
-            if isinstance(image, type_image):
-                image = HD_transform(image, hd_num=hd_num)
-                image = (
-                    self.vis_processor(image)
-                    .unsqueeze(0)
-                    .to(self.device)
-                    .to(self.dtype)
-                )
+            _, ext = os.path.splitext(image)
+            if ext.lower() in image_extensions:
+                image = Image.open(image)
+                image = Image_transform(image, hd_num=hd_num)
+            elif ext.lower() in video_extensions:
+                image = load_video(image)
+                image = frame2img(image, self.font)
+                image = Video_transform(image, hd_num=hd_num)
             else:
-                print(f"Invalid input type {type(image)}")
-                assert isinstance(image, torch.Tensor), "Invalid input type"
+                print("Unknow input format", image)
+                return None
+            image = self.vis_processor(image).unsqueeze(0).to(self.device)
+        elif isinstance(image, type_image):
+            image = Image_transform(image, hd_num=hd_num)
+            image = self.vis_processor(image).unsqueeze(0).to(self.device)
+        else:
+            assert isinstance(image, torch.Tensor)
 
         img_embeds, atts_img, img_target = self.img2emb(image)
         return img_embeds
@@ -193,21 +233,24 @@ class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
 
         return wrapped_img_embeds, wrapped_atts_img, wrapped_target
 
-    def text2emb(self, text, add_special=False):
+    def text2emb(self, text, add_special_tokens=False):
         to_regress_tokens = self.tokenizer(
             text,
             return_tensors="pt",
             padding="longest",
             truncation=True,
             max_length=self.max_length,
-            add_special_tokens=add_special,
+            add_special_tokens=add_special_tokens,
         ).to(self.device)
 
         targets = self.mask_human_targets(to_regress_tokens.input_ids)
         targets = targets.to(self.device)
         return to_regress_tokens, targets
 
-    def interleav_wrap_chat(self, tokenizer, query, image, history, meta_instruction):
+    def interleav_wrap_chat(
+        self, query, image, history=[], meta_instruction="", max_length=16384, hd_num=24
+    ):
+        self.max_length = max_length
         prompt = ""
         if meta_instruction:
             prompt += (
@@ -217,26 +260,43 @@ class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
             prompt += f"""[UNUSED_TOKEN_146]user\n{record[0]}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n{record[1]}[UNUSED_TOKEN_145]\n"""
         prompt += f"""[UNUSED_TOKEN_146]user\n{query}[UNUSED_TOKEN_145]\n[UNUSED_TOKEN_146]assistant\n"""
 
-        im_len = image.shape[1]
         image_nums = len(image)
+        if image_nums == 1 and prompt.find("<ImageHere>") == -1:
+            # print ('auto append image at the begining')
+            prompt = "<ImageHere>" + prompt
+
         parts = prompt.split("<ImageHere>")
         wrap_embeds, wrap_im_mask = [], []
         temp_len = 0
+        need_bos = True
 
         if len(parts) != image_nums + 1:
-            raise ValueError("Invalid <ImageHere> prompt format.")
-
+            # raise ValueError('Invalid <ImageHere> prompt format.')
+            print("Waring! The image number != given position!")
+        if image_nums > 1:
+            hd_num = 6
+        else:
+            hu_num = hd_num
         for idx, part in enumerate(parts):
-            if len(part) > 0:
-                part_tokens = tokenizer(part, return_tensors="pt").to(self.device)
+            if need_bos or len(part) > 0:
+                part_tokens = self.tokenizer(
+                    part,
+                    return_tensors="pt",
+                    padding="longest",
+                    add_special_tokens=need_bos,
+                ).to(self.device)
+                if need_bos:
+                    need_bos = False
+
                 part_embeds = self.model.tok_embeddings(part_tokens.input_ids)
                 wrap_embeds.append(part_embeds)
                 wrap_im_mask.append(torch.zeros(part_embeds.shape[:2]))
                 temp_len += part_embeds.shape[1]
             if idx < image_nums:
-                wrap_embeds.append(image[idx].unsqueeze(0))
-                wrap_im_mask.append(torch.ones(1, image[idx].shape[0]))
-                temp_len += im_len
+                img = self.encode_img(image[idx], hd_num)
+                wrap_embeds.append(img)
+                wrap_im_mask.append(torch.ones(img.shape[:2]))
+                temp_len += img.shape[1]
 
             if temp_len > self.max_length:
                 break
@@ -246,7 +306,7 @@ class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
         wrap_embeds = wrap_embeds[:, : self.max_length].to(self.device)
         wrap_im_mask = wrap_im_mask[:, : self.max_length].to(self.device).bool()
         inputs = {"inputs_embeds": wrap_embeds}
-        return inputs, wrap_im_mask
+        return inputs, wrap_im_mask, temp_len
 
     def interleav_wrap(self, img_list, text_list):
         wrap_embeds_list, wrap_atts_list = [], []
@@ -368,6 +428,7 @@ class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
 
         samples = kwargs.get("samples", None)
         if samples:
+            infer_mode = samples.get("infer_mode", "base")
             if samples["data_type"][0] == "text":
                 has_img = False
             elif samples["data_type"][0] == "multi":
@@ -398,6 +459,7 @@ class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
             labels = targets
         else:
             im_mask = kwargs.get("im_mask", None)
+            infer_mode = kwargs.get("infer_mode", "base")
             if im_mask is None and inputs_embeds is not None:
                 im_mask = torch.zeros(inputs_embeds.shape[:2]).to(inputs_embeds.device)
                 im_mask = im_mask.bool()
@@ -428,6 +490,7 @@ class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
             im_mask=im_mask,
+            infer_mode=infer_mode,
         )
 
         hidden_states = outputs[0]
@@ -466,6 +529,7 @@ class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
         attention_mask=None,
         inputs_embeds=None,
         im_mask=None,
+        infer_mode="base",
         **kwargs,
     ):
         if past_key_values is not None:
@@ -503,6 +567,7 @@ class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
                 "use_cache": kwargs.get("use_cache"),
                 "attention_mask": attention_mask,
                 "im_mask": im_mask,
+                "infer_mode": infer_mode,
             }
         )
         return model_inputs
@@ -541,8 +606,8 @@ class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
         self,
         tokenizer,
         query: str,
-        image: torch.Tensor = None,
-        hd_num: int = 25,
+        image: List[Tuple[str, str]] = [],
+        hd_num: int = 24,
         history: List[Tuple[str, str]] = [],
         streamer: Optional[BaseStreamer] = None,
         max_new_tokens: int = 1024,
@@ -551,19 +616,27 @@ class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
         temperature: float = 1.0,
         top_p: float = 0.8,
         repetition_penalty: float = 1.005,
+        infer_mode: str = "base",
+        use_meta: bool = False,
         meta_instruction: str = "You are an AI assistant whose name is InternLM-XComposer (浦语·灵笔).\n"
         "- InternLM-XComposer (浦语·灵笔) is a multi-modality conversational language model that is developed by Shanghai AI Laboratory (上海人工智能实验室). It is designed to be helpful, honest, and harmless.\n"
         "- InternLM-XComposer (浦语·灵笔) can understand and communicate fluently in the language chosen by the user such as English and 中文.\n"
         "- InternLM-XComposer (浦语·灵笔) is capable of comprehending and articulating responses effectively based on the provided image.",
         **kwargs,
     ):
+
+        if not use_meta:
+            meta_instruction = ""
         if image is None:
             inputs = self.build_inputs(tokenizer, query, history, meta_instruction)
             im_mask = torch.zeros(inputs["input_ids"].shape[:2]).cuda().bool()
         else:
-            image = self.encode_img(image, hd_num=hd_num)
-            inputs, im_mask = self.interleav_wrap_chat(
-                tokenizer, query, image, history, meta_instruction
+            inputs, im_mask, _ = self.interleav_wrap_chat(
+                query,
+                image,
+                history=history,
+                meta_instruction=meta_instruction,
+                hd_num=hd_num,
             )
         inputs = {k: v.to(self.device) for k, v in inputs.items() if torch.is_tensor(v)}
         # also add end-of-assistant token in eos token id to avoid unnecessary generation
@@ -582,6 +655,7 @@ class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
             eos_token_id=eos_token_id,
             repetition_penalty=repetition_penalty,
             im_mask=im_mask,
+            infer_mode=infer_mode,
             **kwargs,
         )
         if image is None:
@@ -592,3 +666,253 @@ class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
         response = response.split("[UNUSED_TOKEN_145]")[0]
         history = history + [(query, response)]
         return response, history
+
+    @torch.no_grad()
+    def write_artical(
+        self,
+        inst: str,
+        image: List[Tuple[str, str]] = [],
+        hd_num: int = 25,
+        history: List[Tuple[str, str]] = [],
+        streamer: Optional[BaseStreamer] = None,
+        max_new_tokens: int = 1024,
+        do_sample: bool = True,
+        num_beams: int = 1,
+        temperature: float = 1.0,
+        top_p: float = 0.8,
+        repetition_penalty: float = 1.005,
+        max_length: int = 8192,
+        seed: int = -1,
+        use_meta: bool = False,
+        **kwargs,
+    ):
+        meta_instruction = """You are an AI assistant whose name is InternLM-XComposer (浦语·灵笔).
+- InternLM-XComposer (浦语·灵笔) is a conversational language model that is developed by Shanghai AI Laboratory (上海人工智能实验室). It is designed to be helpful, honest, and harmless.
+- InternLM-XComposer (浦语·灵笔) can understand and communicate fluently in the language chosen by the user such as English and 中文.
+"""
+        if seed != -1:
+            set_seed(seed)
+        if len(history):
+            print(
+                "Only chat function support multi round now, history will be ignored in the artical mode"
+            )
+        stop_words_ids = [92542]
+        stopping_criteria = get_stopping_criteria(stop_words_ids)
+
+        if not use_meta:
+            meta_instruction = ""
+        with torch.no_grad():
+            inputs, im_mask, len_input_tokens = self.interleav_wrap_chat(
+                inst, image, meta_instruction=meta_instruction, max_length=max_length
+            )
+        with torch.autocast(device_type="cuda", dtype=torch.float16):
+            with torch.no_grad():
+                generate = self.generate(
+                    inputs_embeds=inputs["inputs_embeds"],
+                    do_sample=do_sample,
+                    num_beams=num_beams,
+                    temperature=temperature,
+                    repetition_penalty=repetition_penalty,
+                    stopping_criteria=stopping_criteria,
+                    max_new_tokens=max_length - len_input_tokens,
+                    top_p=0.8,
+                    top_k=40,
+                    length_penalty=1.0,
+                    im_mask=im_mask,
+                    infer_mode="write",
+                )
+
+        response = generate[0].tolist()
+        response = self.tokenizer.decode(response, skip_special_tokens=True)
+        # remove eoa
+        response = response.replace("[UNUSED_TOKEN_145]", "")
+        response = response.replace("[UNUSED_TOKEN_146]", "")
+
+        return response
+
+    @torch.no_grad()
+    def write_webpage(
+        self,
+        inst: str,
+        image: List[Tuple[str, str]] = [],
+        max_new_tokens: int = 4800,
+        do_sample: bool = True,
+        num_beams: int = 2,
+        temperature: float = 1.0,
+        repetition_penalty: float = 3.0,
+        seed: int = -1,
+        use_meta: bool = False,
+        task: str = "Instruction-aware Webpage Generation",
+        **kwargs,
+    ):
+
+        if seed != -1:
+            set_random_seed(seed, set_cudnn=True)
+        with torch.no_grad():
+            inputs, im_mask, len_input_tokens = self.interleav_wrap_chat(inst, image)
+
+        with torch.autocast(device_type="cuda", dtype=torch.float16):
+            with torch.no_grad():
+                generate = self.generate(
+                    inputs_embeds=inputs["inputs_embeds"],
+                    do_sample=do_sample,
+                    temperature=temperature,
+                    num_beams=num_beams,
+                    repetition_penalty=repetition_penalty,
+                    max_new_tokens=max_new_tokens,
+                    im_mask=im_mask,
+                    infer_mode="web",
+                )
+        response = generate[0].tolist()
+        response = self.tokenizer.decode(response, skip_special_tokens=True)
+        # remove eoa
+        response = response.replace("[UNUSED_TOKEN_145]", "")
+        out = response.replace("[UNUSED_TOKEN_146]", "")
+        image_type = "random"
+        pattern = r"""https://source\.unsplash\.com/random/(\d+)x(\d+)/\?([^'"]+)"""
+        if image_type == "placeholder":
+            out = re.sub(pattern, r"https://placehold.co/\1x\2", out)
+        elif image_type == "random":
+            out = re.sub(pattern, r"https://picsum.photos/\1/\2", out)
+
+        with open(task.replace(" ", "_") + ".html", "w") as f:
+            f.write(out)
+        return out
+
+    @torch.no_grad()
+    def resume_2_webpage(
+        self,
+        inst: str,
+        image: List[Tuple[str, str]] = [],
+        max_new_tokens: int = 4800,
+        do_sample: bool = True,
+        num_beams: int = 2,
+        temperature: float = 1.0,
+        repetition_penalty: float = 3.0,
+        seed: int = -1,
+        use_meta: bool = False,
+        task: str = "Resume-to-Personal Page",
+        **kwargs,
+    ):
+
+        if seed != -1:
+            set_random_seed(seed, set_cudnn=True)
+        try:
+            with open(inst) as fd:
+                resume = fd.read()
+        except:
+            print("The input should be a resume with markdown format.")
+        inst = " Generate a personal page using the content in the resume:" + resume
+        with torch.no_grad():
+            inputs, im_mask, len_input_tokens = self.interleav_wrap_chat(inst, image)
+        with torch.autocast(device_type="cuda", dtype=torch.float16):
+            with torch.no_grad():
+                generate = self.generate(
+                    inputs_embeds=inputs["inputs_embeds"],
+                    do_sample=do_sample,
+                    temperature=temperature,
+                    num_beams=num_beams,
+                    repetition_penalty=repetition_penalty,
+                    max_new_tokens=max_new_tokens,
+                    im_mask=im_mask,
+                    infer_mode="web",
+                )
+        response = generate[0].tolist()
+        response = self.tokenizer.decode(response, skip_special_tokens=True)
+        # remove eoa
+        response = response.replace("[UNUSED_TOKEN_145]", "")
+        html = response.replace("[UNUSED_TOKEN_146]", "")
+
+        if seed != -1:
+            set_random_seed(seed, set_cudnn=True)
+        js_inst = " Generate JavaScript events for the html code:" + html
+        with torch.no_grad():
+            inputs, im_mask, len_input_tokens = self.interleav_wrap_chat(js_inst, image)
+        with torch.autocast(device_type="cuda", dtype=torch.float16):
+            with torch.no_grad():
+                generate = self.generate(
+                    inputs_embeds=inputs["inputs_embeds"],
+                    do_sample=do_sample,
+                    temperature=temperature,
+                    num_beams=num_beams,
+                    repetition_penalty=repetition_penalty,
+                    max_new_tokens=max_new_tokens,
+                    im_mask=im_mask,
+                    infer_mode="web",
+                )
+        response = generate[0].tolist()
+        response = self.tokenizer.decode(response, skip_special_tokens=True)
+        # remove eoa
+        response = response.replace("[UNUSED_TOKEN_145]", "")
+        js = response.replace("[UNUSED_TOKEN_146]", "")
+
+        if re.search(r"</script>", html):
+            js = re.findall(r"<script>([\s\S]*?)<\/script>", js)
+            html = re.sub(r"(</script>)", f"\n{js}\n" + r"\1", html)
+        elif re.search(r"</html>", html):
+            html = re.sub(r"(</html>)", f"\n{js}\n" + r"\1", html)
+        out = html
+
+        image_type = "random"
+        pattern = r"""https://source\.unsplash\.com/random/(\d+)x(\d+)/\?([^'"]+)"""
+        if image_type == "placeholder":
+            out = re.sub(pattern, r"https://placehold.co/\1x\2", out)
+        elif image_type == "random":
+            out = re.sub(pattern, r"https://picsum.photos/\1/\2", out)
+
+        with open(task.replace(" ", "_") + ".html", "w") as f:
+            f.write(out)
+        return out
+
+    @torch.no_grad()
+    def screen_2_webpage(
+        self,
+        inst: str,
+        image: List[Tuple[str, str]] = [],
+        max_new_tokens: int = 4800,
+        do_sample: bool = True,
+        num_beams: int = 2,
+        temperature: float = 1.0,
+        repetition_penalty: float = 3.0,
+        seed: int = -1,
+        use_meta: bool = False,
+        task: str = "Screenshot-to-Webpage",
+        **kwargs,
+    ):
+
+        if seed != -1:
+            set_random_seed(seed, set_cudnn=True)
+        if len(image) == 0:
+            print("No image is provided, skip")
+            return ""
+        inst = " Generate the HTML code of this web image with Tailwind CSS."
+        with torch.no_grad():
+            inputs, im_mask, len_input_tokens = self.interleav_wrap_chat(inst, image)
+
+        with torch.autocast(device_type="cuda"):
+            with torch.no_grad():
+                generate = self.generate(
+                    inputs_embeds=inputs["inputs_embeds"],
+                    do_sample=do_sample,
+                    temperature=temperature,
+                    num_beams=num_beams,
+                    repetition_penalty=repetition_penalty,
+                    max_new_tokens=max_new_tokens,
+                    im_mask=im_mask,
+                    infer_mode="web",
+                )
+        response = generate[0].tolist()
+        response = self.tokenizer.decode(response, skip_special_tokens=True)
+        # remove eoa
+        response = response.replace("[UNUSED_TOKEN_145]", "")
+        out = response.replace("[UNUSED_TOKEN_146]", "")
+        image_type = "random"
+        pattern = r"""https://source\.unsplash\.com/random/(\d+)x(\d+)/\?([^'"]+)"""
+        if image_type == "placeholder":
+            out = re.sub(pattern, r"https://placehold.co/\1x\2", out)
+        elif image_type == "random":
+            out = re.sub(pattern, r"https://picsum.photos/\1/\2", out)
+
+        with open(task.replace(" ", "_") + ".html", "w") as f:
+            f.write(out)
+        return out
