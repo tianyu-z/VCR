@@ -183,3 +183,6 @@ image_b.png
 image_a.png
 output.png
 dev_1.py
+*.out
+dataset.py
+dataset.sh

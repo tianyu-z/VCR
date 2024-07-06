@@ -577,7 +577,7 @@ def main(
         end_index_ = min(end_index, len(dataset))
 
     else:
-        output_file = f"{model_id_name}_{difficulty}_{language}.json"
+        output_file = f"{model_id_name}_{language}_{difficulty}.json"
         end_index_ = len(dataset)
     print(f"Output file: {output_file}")
 
