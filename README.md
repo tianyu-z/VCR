@@ -71,24 +71,24 @@ VCR challenges models to restore partially obscured text within images, leveragi
 VCR-wiki comprises **2.11M** English and **346K** Chinese entities sourced from Wikipedia, offered in both easy and hard variants. Initial results indicate that current vision-language models fall short compared to human performance on this task.
 
 # Benchmark
-EM means `"Exact Match"` and Jaccard means `"Jaccard Similarity"`. The best in closed source and open source are highlighted in **bold**. Closed source models are evaluated based on [500 test samples](https://huggingface.co/collections/vcr-org/vcr-visual-caption-restoration-500-test-subsets-6667c9efd77c55f2363b34a1), while open source models are evaluated based on [5000 test samples](https://huggingface.co/collections/vcr-org/vcr-visual-caption-restoration-6661393b1761e2aff7b967b9).
+EM means `"Exact Match"` and Jaccard means `"Jaccard Similarity"`. The best in closed source and open source are highlighted in **bold**. The second best are highlighted in *italic*. Closed source models are evaluated based on [500 test samples](https://huggingface.co/collections/vcr-org/vcr-visual-caption-restoration-500-test-subsets-6667c9efd77c55f2363b34a1), while open source models are evaluated based on [5000 test samples](https://huggingface.co/collections/vcr-org/vcr-visual-caption-restoration-6661393b1761e2aff7b967b9).
 | Model | Size (unknown for closed source) | En Easy EM | En Easy Jaccard | En Hard EM | En Hard Jaccard | Zh Easy EM | Zh Easy Jaccard | Zh Hard EM | Zh Hard Jaccard |
 |---|---|---|---|---|---|---|---|---|---|
 | Claude 3 Opus | - | 62.0 | 77.67 | 37.8 | 57.68 | 0.9 | 11.5 | 0.3 | 9.22 |
 | Claude 3.5 Sonnet | - | 63.85 | 74.65 | 41.74 | 56.15 | 1.0 | 7.54 | 0.2 | 4.0 |
-| GPT-4 Turbo | - | 78.74 | 88.54 | 45.15 | 65.72 | 0.2 | 8.42 | 0.0 | 8.58 |
+| GPT-4 Turbo | - | *78.74* | *88.54* | *45.15* | *65.72* | 0.2 | 8.42 | 0.0 | *8.58* |
 | GPT-4V | - | 52.04 | 65.36 | 25.83 | 44.63 | - | - | - | - |
 | GPT-4o | - | **91.55** | **96.44** | **73.2** | **86.17** | **14.87** | **39.05** | **2.2** | **22.72** |
 | Gemini 1.5 Pro | - | 62.73 | 77.71 | 28.07 | 51.9 | 1.1 | 11.1 | 0.7 | 11.82 |
-| Qwen-VL-Max | - | 76.8 | 85.71 | 41.65 | 61.18 | 6.34 | 13.45 | 0.89 | 5.4 |
+| Qwen-VL-Max | - | 76.8 | 85.71 | 41.65 | 61.18 | *6.34* | *13.45* | *0.89* | 5.4 |
 | Reka Core | - | 66.46 | 84.23 | 6.71 | 25.84 | 0.0 | 3.43 | 0.0 | 3.35 |
-| Cambrian-1 | 34B | 79.69 | 89.27 | 27.20 | 50.04 | 0.03 | 1.27 | 0.00 | 1.37 |
+| Cambrian-1 | 34B | 79.69 | *89.27* | *27.20* | 50.04 | 0.03 | 1.27 | 0.00 | 1.37 |
 | CogVLM2 | 19B | **83.25** | **89.75** | **37.98** | **59.99** | 9.15 | 17.12 | 0.08 | 3.67 |
-| CogVLM2-Chinese | 19B | 79.90 | 87.42 | 25.13 | 48.76 | **33.24** | **57.57** | **1.34** | **17.35** |
+| CogVLM2-Chinese | 19B | *79.90* | 87.42 | 25.13 | 48.76 | **33.24** | **57.57** | **1.34** | **17.35** |
 | DeepSeek-VL | 1.3B | 23.04 | 46.84 | 0.16 | 11.89 | 0.0 | 6.56 | 0.0 | 6.46 |
 | DeepSeek-VL | 7B | 38.01 | 60.02 | 1.0 | 15.9 | 0.0 | 4.08 | 0.0 | 5.11 |
 | DocOwl-1.5-Omni | 8B | 0.84 | 13.34 | 0.04 | 7.76 | 0.0 | 1.14 | 0.0 | 1.37 |
-| GLM-4v | 9B | 43.72 | 74.73 | 24.83 | 53.82 | 31.78 | 52.57 | 1.20 | 14.73 |
+| GLM-4v | 9B | 43.72 | 74.73 | 24.83 | *53.82* | *31.78* | *52.57* | *1.20* | *14.73* |
 | Idefics2 | 8B | 15.75 | 31.97 | 0.65 | 9.93 | - | - | - | - |
 | InternLM-XComposer2-VL | 7B | 46.64 | 70.99 | 0.7 | 12.51 | 0.27 | 12.32 | 0.07 | 8.97 |
 | InternLM-XComposer2-VL-4KHD | 7B | 5.32 | 22.14 | 0.21 | 9.52 | 0.46 | 12.31 | 0.05 | 7.67 |
