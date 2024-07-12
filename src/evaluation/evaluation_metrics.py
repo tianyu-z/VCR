@@ -347,7 +347,7 @@ def main(
     modelname = model_id.replace("/", "-")
     if end_index is not None:
         filename = (
-            f"{modelname}_{language}_{difficulty}_evaluation_result_{end_index}.json"
+            f"{modelname}_{language}_{difficulty}_{end_index}_evaluation_result.json"
         )
     else:
         filename = f"{modelname}_{language}_{difficulty}_evaluation_result.json"
@@ -393,10 +393,10 @@ if __name__ == "__main__":
     )
     # Example:
     # main(
-    #     "internlm/internlm-xcomposer2-4khd-7b",
+    #     "OpenGVLab-InternVL2-40B",
     #     eval_path=None,
     #     output_path=".",
-    #     json_filename="/home/VCR/src/evaluation/internlm-internlm-xcomposer2-4khd-7b_easy_zh_5000.json",
+    #     json_filename="/home/work/VCR/src/evaluation/internlm-internlm-xcomposer2-4khd-7b_easy_zh_5000.json",
     #     dataset_handler="vcr-org/VCR-wiki-zh-easy-test",
     #     inference_results=None,
     # )
@@ -420,7 +420,7 @@ if __name__ == "__main__":
     #         main(
     #             model_id=model_id,
     #             eval_path=None,
-    #             output_path="/home/mila/t/tianyu.zhang/scratch/VCR/eval_metrics",
+    #             output_path="/home/work/VCR/eval_metrics",
     #             json_filename=os.path.join(PATH, json_file),
     #             dataset_handler=dataset_handler,
     #             inference_results=None

@@ -186,3 +186,4 @@ dev_1.py
 *.out
 dataset.py
 dataset.sh
+inference_single.sh

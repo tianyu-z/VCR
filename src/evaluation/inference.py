@@ -92,6 +92,7 @@ def get_model(model_id, device, dtype, finetune_peft_path=None):
         "openbmb/MiniCPM-Llama3-V-2_5",
         "OpenGVLab/InternVL-Chat-V1-5",
         "OpenGVLab/InternVL2-26B",
+        "OpenGVLab/InternVL2-40B",
     ]:
 
         if is_finetune:
@@ -190,9 +191,13 @@ def get_model(model_id, device, dtype, finetune_peft_path=None):
         tokenizer.padding_side = "left"
         tokenizer.pad_token_id = tokenizer.eod_id
         processor = None
-    elif model_id == "nyu-visionx/cambrian-34b":
-        model_path = os.path.expanduser("nyu-visionx/cambrian-34b")
-        # model_path = "src/evaluation/cambrian-34b"
+    elif model_id in [
+        "nyu-visionx/cambrian-34b",
+        "nyu-visionx/cambrian-phi3-3b",
+        "nyu-visionx/cambrian-8b",
+        "nyu-visionx/cambrian-13b",
+    ]:
+        model_path = os.path.expanduser(model_id)
         from cambrian.mm_utils import (
             get_model_name_from_path,
         )
@@ -297,7 +302,11 @@ def inference_single(
                 temperature=0.7,
                 max_new_tokens=max_tokens_len,
             )
-    elif model_id in ["OpenGVLab/InternVL-Chat-V1-5", "OpenGVLab/InternVL2-26B"]:
+    elif model_id in [
+        "OpenGVLab/InternVL-Chat-V1-5",
+        "OpenGVLab/InternVL2-26B",
+        "OpenGVLab/InternVL2-40B",
+    ]:
         pixel_values = load_image_ext(image, max_num=6).to(dtype).cuda()
         generation_config = dict(
             num_beams=1,
@@ -441,7 +450,12 @@ def inference_single(
             outputs = model.generate(**inputs, **gen_kwargs)
             outputs = outputs[:, inputs["input_ids"].shape[1] :]
             res[image_id] = tokenizer.decode(outputs[0])
-    elif model_id == "nyu-visionx/cambrian-34b":
+    elif model_id in [
+        "nyu-visionx/cambrian-34b",
+        "nyu-visionx/cambrian-phi3-3b",
+        "nyu-visionx/cambrian-8b",
+        "nyu-visionx/cambrian-13b",
+    ]:
         from utils import cambrian_process
 
         input_ids, image_tensor, image_sizes, prompt = cambrian_process(
@@ -516,7 +530,7 @@ def inference_single_pipeline(
 
 def main(
     dataset_handler="vcr-org/VCR-wiki-en-hard-test",
-    model_id="internlm/internlm-xcomposer2d5-7b",
+    model_id="OpenGVLab/InternVL2-40B",
     device="cuda",
     dtype="bf16",
     save_interval=5,  # Save progress every 100 images
