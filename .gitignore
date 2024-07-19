@@ -178,7 +178,6 @@ test_500/*
 dev.py
 
 test_script/*
-inference.sh
 image_b.png
 image_a.png
 output.png
@@ -187,3 +186,9 @@ dev_1.py
 dataset.py
 dataset.sh
 inference_single.sh
+dataset_/*
+dev_2.py
+dev_3.py
+dev_mul.py
+*.sh
+

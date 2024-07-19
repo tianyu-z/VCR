@@ -5,6 +5,7 @@ from tqdm import trange
 import argparse
 import requests
 import httpx
+from time import sleep
 
 
 def encode_image_to_base64(image_path):
@@ -19,20 +20,15 @@ def encode_image_to_base64(image_path):
 
 
 def resume_init(args):
-    file_name = f"{args.model_id}_{args.dataset_handler}_inference.json"
+    name_data = args.dataset_handler.replace("/", "_").replace("-", "_")
+    file_name = f"{args.model_id}_{name_data}_inference.json"
     if os.path.exists(file_name):
         with open(file_name, "r", encoding="utf-8") as f:
             output = json.load(f)
         # reverse the for loop of dictionary
         keys = list(output.keys())
         values = list(output.values())
-        for i in range(len(keys) - 1, -1, -1):
-            if (
-                values[i]["res_stacked_image"] != ""
-                or values[i]["res_only_it_image"] != ""
-            ):
-                start = i + 1
-                break
+        start = 0
     else:
         output = {
             str(i): {
@@ -69,54 +65,60 @@ def claude(output, start, question, file_name, image_path, model_id, end):
         image2_path = os.path.join(image_path, f"only_it_image_{i}.png")
         image2_data = encode_image_to_base64(image2_path)
         try:
-            message = client.messages.create(
-                model=model_id,
-                max_tokens=256,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "image",
-                                "source": {
-                                    "type": "base64",
-                                    "media_type": media_type,
-                                    "data": image1_data,
+            if output[str(i)]["res_stacked_image"] == "":
+                message = client.messages.create(
+                    model=model_id,
+                    max_tokens=256,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "image",
+                                    "source": {
+                                        "type": "base64",
+                                        "media_type": media_type,
+                                        "data": image1_data,
+                                    },
                                 },
-                            },
-                            {
-                                "type": "text",
-                                "text": question,
-                            },
-                        ],
-                    }
-                ],
-            )
-            output[str(i)]["res_stacked_image"] = message.dict()["content"][0]["text"]
-            message = client.messages.create(
-                model=model_id,
-                max_tokens=256,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "image",
-                                "source": {
-                                    "type": "base64",
-                                    "media_type": media_type,
-                                    "data": image2_data,
+                                {
+                                    "type": "text",
+                                    "text": question,
                                 },
-                            },
-                            {
-                                "type": "text",
-                                "text": question,
-                            },
-                        ],
-                    }
-                ],
-            )
-            output[str(i)]["res_only_it_image"] = message.dict()["content"][0]["text"]
+                            ],
+                        }
+                    ],
+                )
+                output[str(i)]["res_stacked_image"] = message.dict()["content"][0][
+                    "text"
+                ]
+            if output[str(i)]["res_only_it_image"] == "":
+                message = client.messages.create(
+                    model=model_id,
+                    max_tokens=256,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "image",
+                                    "source": {
+                                        "type": "base64",
+                                        "media_type": media_type,
+                                        "data": image2_data,
+                                    },
+                                },
+                                {
+                                    "type": "text",
+                                    "text": question,
+                                },
+                            ],
+                        }
+                    ],
+                )
+                output[str(i)]["res_only_it_image"] = message.dict()["content"][0][
+                    "text"
+                ]
 
         except Exception as e:
             print(e)
@@ -141,64 +143,68 @@ def gpt(output, start, question, file_name, image_path, model_id, end):
         image2_path = os.path.join(image_path, f"only_it_image_{i}.png")
         image2_data = encode_image_to_base64(image2_path)
         try:
-            payload = {
-                "model": model_id,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": question,
-                            },
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/png;base64,{image1_data}",
+            if output[str(i)]["res_stacked_image"] == "":
+                payload = {
+                    "model": model_id,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": question,
                                 },
-                            },
-                        ],
-                    }
-                ],
-                "max_tokens": 256,
-            }
-            response = requests.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers=headers,
-                json=payload,
-            )
-            output[str(i)]["res_stacked_image"] = response.json()["choices"][0][
-                "message"
-            ]["content"]
-            payload = {
-                "model": model_id,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": question,
-                            },
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/png;base64,{image2_data}",
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/png;base64,{image1_data}",
+                                    },
                                 },
-                            },
-                        ],
-                    }
-                ],
-                "max_tokens": 256,
-            }
-            response = requests.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers=headers,
-                json=payload,
-            )
-            output[str(i)]["res_only_it_image"] = response.json()["choices"][0][
-                "message"
-            ]["content"]
+                            ],
+                        }
+                    ],
+                    "max_tokens": 256,
+                }
+                response = requests.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers=headers,
+                    json=payload,
+                )
+                output[str(i)]["res_stacked_image"] = response.json()["choices"][0][
+                    "message"
+                ]["content"]
+                sleep(1)
+            if output[str(i)]["res_only_it_image"] == "":
+                payload = {
+                    "model": model_id,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": question,
+                                },
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/png;base64,{image2_data}",
+                                    },
+                                },
+                            ],
+                        }
+                    ],
+                    "max_tokens": 256,
+                }
+                response = requests.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers=headers,
+                    json=payload,
+                )
+                output[str(i)]["res_only_it_image"] = response.json()["choices"][0][
+                    "message"
+                ]["content"]
+                sleep(1)
         except Exception as e:
             print(e)
             print(f"Error at {i}")
@@ -249,10 +255,16 @@ def gemini(output, start, question, file_name, image_path, model_id, end):
         else:
             image2_data = PIL.Image.open(image2_path)
         try:
-            response_1 = model.generate_content([question, image1_data], stream=False)
-            output[str(i)]["res_stacked_image"] = response_1.text
-            response_2 = model.generate_content([question, image2_data], stream=False)
-            output[str(i)]["res_only_it_image"] = response_2.text
+            if output[str(i)]["res_stacked_image"] == "":
+                response_1 = model.generate_content(
+                    [question, image1_data], stream=False
+                )
+                output[str(i)]["res_stacked_image"] = response_1.text
+            if output[str(i)]["res_only_it_image"] == "":
+                response_2 = model.generate_content(
+                    [question, image2_data], stream=False
+                )
+                output[str(i)]["res_only_it_image"] = response_2.text
         except Exception as e:
             print(e)
             print(f"Error at {i}")
@@ -279,38 +291,44 @@ def reka(output, start, question, file_name, image_path, model_id, end):
         raise ValueError("image_path must be a url for Reka.")
     for i in trange(start, end):
         try:
-            response = client.chat.create(
-                messages=[
-                    ChatMessage(
-                        content=[
-                            {
-                                "type": "image_url",
-                                "image_url": f"{image_path}/stacked_image_{i}.png",
-                            },
-                            {"type": "text", "text": question},
-                        ],
-                        role="user",
-                    )
-                ],
-                model=model_id,
-            )
-            output[str(i)]["res_stacked_image"] = response.responses[0].message.content
-            response = client.chat.create(
-                messages=[
-                    ChatMessage(
-                        content=[
-                            {
-                                "type": "image_url",
-                                "image_url": f"{image_path}/only_it_image_{i}.png",
-                            },
-                            {"type": "text", "text": question},
-                        ],
-                        role="user",
-                    )
-                ],
-                model=model_id,
-            )
-            output[str(i)]["res_only_it_image"] = response.responses[0].message.content
+            if output[str(i)]["res_stacked_image"] == "":
+                response = client.chat.create(
+                    messages=[
+                        ChatMessage(
+                            content=[
+                                {
+                                    "type": "image_url",
+                                    "image_url": f"{image_path}/stacked_image_{i}.png",
+                                },
+                                {"type": "text", "text": question},
+                            ],
+                            role="user",
+                        )
+                    ],
+                    model=model_id,
+                )
+                output[str(i)]["res_stacked_image"] = response.responses[
+                    0
+                ].message.content
+            if output[str(i)]["res_only_it_image"] == "":
+                response = client.chat.create(
+                    messages=[
+                        ChatMessage(
+                            content=[
+                                {
+                                    "type": "image_url",
+                                    "image_url": f"{image_path}/only_it_image_{i}.png",
+                                },
+                                {"type": "text", "text": question},
+                            ],
+                            role="user",
+                        )
+                    ],
+                    model=model_id,
+                )
+                output[str(i)]["res_only_it_image"] = response.responses[
+                    0
+                ].message.content
         except Exception as e:
             print(e)
             print(f"Error at {i}")
@@ -336,48 +354,50 @@ def Qwen(output, start, question, file_name, image_path, model_id, end):
         raise ValueError("image_path must be a url for Qwen.")
     for i in trange(start, end):
         try:
-            messages = [
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "image": f"{image_path}/stacked_image_{i}.png",
-                        },
-                        {"text": question},
-                    ],
-                }
-            ]
-            response = dashscope.MultiModalConversation.call(
-                model=model_id, messages=messages, top_k=1
-            )
-            if response.status_code == HTTPStatus.OK:
-                output[str(i)]["res_stacked_image"] = response.output.choices[
-                    0
-                ].message.content[0]["text"]
-            else:
-                print(response.code)
-                print(response.message)
-            messages = [
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "image": f"{image_path}/only_it_image_{i}.png",
-                        },
-                        {"text": question},
-                    ],
-                }
-            ]
-            response = dashscope.MultiModalConversation.call(
-                model=model_id, messages=messages, top_k=1
-            )
-            if response.status_code == HTTPStatus.OK:
-                output[str(i)]["res_only_it_image"] = response.output.choices[
-                    0
-                ].message.content[0]["text"]
-            else:
-                print(response.code)
-                print(response.message)
+            if output[str(i)]["res_stacked_image"] == "":
+                messages = [
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "image": f"{image_path}/stacked_image_{i}.png",
+                            },
+                            {"text": question},
+                        ],
+                    }
+                ]
+                response = dashscope.MultiModalConversation.call(
+                    model=model_id, messages=messages, top_k=1
+                )
+                if response.status_code == HTTPStatus.OK:
+                    output[str(i)]["res_stacked_image"] = response.output.choices[
+                        0
+                    ].message.content[0]["text"]
+                else:
+                    print(response.code)
+                    print(response.message)
+            if output[str(i)]["res_only_it_image"] == "":
+                messages = [
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "image": f"{image_path}/only_it_image_{i}.png",
+                            },
+                            {"text": question},
+                        ],
+                    }
+                ]
+                response = dashscope.MultiModalConversation.call(
+                    model=model_id, messages=messages, top_k=1
+                )
+                if response.status_code == HTTPStatus.OK:
+                    output[str(i)]["res_only_it_image"] = response.output.choices[
+                        0
+                    ].message.content[0]["text"]
+                else:
+                    print(response.code)
+                    print(response.message)
         except Exception as e:
             print(e)
             print(f"Error at {i}")
@@ -401,7 +421,8 @@ def main(args):
             "Please Implement your own logic for non-default image url."
         )
     else:
-        image_path = args.image_path + args.dataset_handler
+        # image_path = args.image_path + args.dataset_handler
+        image_path = args.image_path
     if "claude" in args.model_id:
         output = claude(
             output, start, question, file_name, image_path, args.model_id, args.end
@@ -469,6 +490,7 @@ if __name__ == "__main__":
         "qwen-vl-max",
         "reka-core-20240501",
         "gemini-1.5-pro-latest",
+        "gpt-4o-mini-2024-07-18",  # gpt-4o-mini
     ]
     supported_dataset_handlers = [
         "VCR-wiki-en-easy-test-500",

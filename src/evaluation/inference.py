@@ -93,6 +93,7 @@ def get_model(model_id, device, dtype, finetune_peft_path=None):
         "OpenGVLab/InternVL-Chat-V1-5",
         "OpenGVLab/InternVL2-26B",
         "OpenGVLab/InternVL2-40B",
+        "OpenGVLab/InternVL2-Llama3-76B",
     ]:
 
         if is_finetune:
@@ -306,6 +307,7 @@ def inference_single(
         "OpenGVLab/InternVL-Chat-V1-5",
         "OpenGVLab/InternVL2-26B",
         "OpenGVLab/InternVL2-40B",
+        "OpenGVLab/InternVL2-Llama3-76B",
     ]:
         pixel_values = load_image_ext(image, max_num=6).to(dtype).cuda()
         generation_config = dict(
