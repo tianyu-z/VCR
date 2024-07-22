@@ -1,21 +1,18 @@
-# test.py
-import torch
-from PIL import Image
-from transformers import AutoModel, AutoTokenizer
-from utils import load_image as load_image_ext
-import torch
-from PIL import Image
-import os
-from transformers import AutoProcessor, AutoModelForVision2Seq
-
-from transformers import AutoModelForCausalLM, AutoTokenizer
-
-from fire import Fire
-from datasets import load_from_disk, load_dataset
-from PIL.Image import Image as type_image
 import json
-from tqdm import tqdm
+import math
+import os
+
+import torch
+from PIL import Image
+from PIL.Image import Image as type_image
 from autopeftmodel import AutoPeftModelForCausalLMWithResizedWTE
+from datasets import load_dataset
+from fire import Fire
+from tqdm import tqdm
+from transformers import AutoModel
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoProcessor, AutoModelForVision2Seq
+from utils import load_image as load_image_ext
 
 
 def cover_substrings(sentence, substrings, language="en"):
@@ -62,25 +59,24 @@ def get_question(language, caption=None, crossed_texts=None):
         context = ""
     if language == "en":
         return (
-            context
-            + "What is the covered texts in the image? Please restore the covered texts without outputting the explanations."
+                context
+                + "What is the covered texts in the image? Please restore the covered texts without outputting the explanations."
         )
     elif language == "zh":
         return (
-            context
-            + "图像中被覆盖的文本是什么？请在不输出解释的情况下还原被覆盖的文本。"
+                context
+                + "图像中被覆盖的文本是什么？请在不输出解释的情况下还原被覆盖的文本。"
         )
     else:
         raise ValueError("Unsupported language")
 
 
-def get_model(model_id, device, dtype, finetune_peft_path=None):
+def get_model(model_id, dtype, finetune_peft_path=None):
     """
     Get the model, tokenizer, and processor for the given model id.
 
     Parameters:
     model_id (str): The model id of HF.
-    device (str): The device to run the model. Recommended to use "cuda".
     dtype (torch.dtype): The dtype of the model. Recommended to use torch.bfloat16.
     finetune_peft_path (str): The path of the finetuned model if any. Default is None.
 
@@ -91,18 +87,52 @@ def get_model(model_id, device, dtype, finetune_peft_path=None):
     if model_id in [
         "openbmb/MiniCPM-Llama3-V-2_5",
         "OpenGVLab/InternVL-Chat-V1-5",
-        "OpenGVLab/InternVL2-26B",
-        "OpenGVLab/InternVL2-40B",
-        "OpenGVLab/InternVL2-Llama3-76B",
     ]:
-
         if is_finetune:
             raise ValueError(f"Fine-tuning is not supported for {model_id}")
         model = AutoModel.from_pretrained(
-            model_id, trust_remote_code=True, torch_dtype=dtype
+            model_id, device_map="auto", trust_remote_code=True, torch_dtype=dtype
         )
-        model = model.to(device=device)
-        tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(model_id, device_map="auto", trust_remote_code=True)
+        model.eval()
+        processor = None
+    elif model_id in [
+        "OpenGVLab/InternVL2-26B",
+        "OpenGVLab/InternVL2-40B",
+        "OpenGVLab/InternVL2-Llama3-76B"
+    ]:
+        def split_model(model_name):
+            device_map = {}
+            world_size = torch.cuda.device_count()
+            num_layers = {'InternVL2-8B': 32, 'InternVL2-26B': 48,
+                          'InternVL2-40B': 60, 'InternVL2-Llama3-76B': 80}[model_name]
+            # Since the first GPU will be used for ViT, treat it as half a GPU.
+            num_layers_per_gpu = math.ceil(num_layers / (world_size - 0.5))
+            num_layers_per_gpu = [num_layers_per_gpu] * world_size
+            num_layers_per_gpu[0] = math.ceil(num_layers_per_gpu[0] * 0.5)
+            layer_cnt = 0
+            for i, num_layer in enumerate(num_layers_per_gpu):
+                for j in range(num_layer):
+                    device_map[f'language_model.model.layers.{layer_cnt}'] = i
+                    layer_cnt += 1
+            device_map['vision_model'] = 0
+            device_map['mlp1'] = 0
+            device_map['language_model.model.tok_embeddings'] = 0
+            device_map['language_model.model.embed_tokens'] = 0
+            device_map['language_model.output'] = 0
+            device_map['language_model.model.norm'] = 0
+            device_map['language_model.lm_head'] = 0
+            device_map[f'language_model.model.layers.{num_layers - 1}'] = 0
+
+            return device_map
+
+        device_map = split_model(model_id.split("/")[-1])
+        if is_finetune:
+            raise ValueError(f"Fine-tuning is not supported for {model_id}")
+        model = AutoModel.from_pretrained(
+            model_id, device_map=device_map, trust_remote_code=True, torch_dtype=dtype
+        )
+        tokenizer = AutoTokenizer.from_pretrained(model_id, device_map="auto", trust_remote_code=True)
         model.eval()
         processor = None
     elif model_id in [
@@ -118,7 +148,7 @@ def get_model(model_id, device, dtype, finetune_peft_path=None):
             )
 
             model = InternLMXComposer2ForCausalLM.from_pretrained(
-                model_id, trust_remote_code=True, torch_dtype=dtype
+                model_id, device_map="auto", trust_remote_code=True, torch_dtype=dtype
             )
         elif model_id == "internlm/internlm-xcomposer2-4khd-7b":
             from internlm2r4k.modeling_internlm_xcomposer2 import (
@@ -126,7 +156,7 @@ def get_model(model_id, device, dtype, finetune_peft_path=None):
             )
 
             model = InternLMXComposer2ForCausalLM.from_pretrained(
-                model_id, trust_remote_code=True, torch_dtype=dtype
+                model_id, device_map="auto", trust_remote_code=True, torch_dtype=dtype
             )
         elif model_id == "internlm/internlm-xcomposer2d5-7b":
             from internlm2d5.modeling_internlm_xcomposer2 import (
@@ -134,11 +164,10 @@ def get_model(model_id, device, dtype, finetune_peft_path=None):
             )
 
             model = InternLMXComposer2ForCausalLM.from_pretrained(
-                model_id, torch_dtype=dtype, trust_remote_code=True
+                model_id, device_map="auto", torch_dtype=dtype, trust_remote_code=True
             )
 
-        model = model.to(device=device)
-        tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(model_id, device_map="auto", trust_remote_code=True)
         model.eval()
         processor = None
     elif model_id == "HuggingFaceM4/idefics2-8b":
@@ -146,8 +175,8 @@ def get_model(model_id, device, dtype, finetune_peft_path=None):
             raise ValueError(f"Fine-tuning is not supported for {model_id}")
         processor = AutoProcessor.from_pretrained(model_id)
         model = AutoModelForVision2Seq.from_pretrained(
-            model_id, trust_remote_code=True, torch_dtype=dtype
-        ).to(device=device)
+            model_id, device_map="auto", trust_remote_code=True, torch_dtype=dtype
+        )
         tokenizer = None
 
     elif model_id in [
@@ -158,24 +187,23 @@ def get_model(model_id, device, dtype, finetune_peft_path=None):
     ]:
         if is_finetune:
             model = AutoPeftModelForCausalLMWithResizedWTE.from_pretrained(
-                finetune_peft_path, trust_remote_code=True, torch_dtype=dtype
+                finetune_peft_path, device_map="auto", trust_remote_code=True, torch_dtype=dtype
             ).eval()
         else:
             if "Qwen" in model_id:
                 from QWen.modeling_qwen import QWenLMHeadModel
 
                 model = QWenLMHeadModel.from_pretrained(
-                    model_id, trust_remote_code=True, torch_dtype=dtype
+                    model_id, device_map="auto", trust_remote_code=True, torch_dtype=dtype
                 ).eval()
             else:
                 model = AutoModelForCausalLM.from_pretrained(
                     model_id,
-                    device_map=device,
+                    device_map="auto",
                     trust_remote_code=True,
                     torch_dtype=dtype,
                 ).eval()
         # AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
-        model = model.to(device=device)
         tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
         model.eval()
         processor = None
@@ -185,9 +213,8 @@ def get_model(model_id, device, dtype, finetune_peft_path=None):
         from text_monkey.modeling_monkey import MonkeyLMHeadModel
 
         model = MonkeyLMHeadModel.from_pretrained(
-            model_id, device_map="cuda", trust_remote_code=True
+            model_id, device_map="auto", trust_remote_code=True
         ).eval()
-        # model = model.to(device=device)
         tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
         tokenizer.padding_side = "left"
         tokenizer.pad_token_id = tokenizer.eod_id
@@ -206,7 +233,7 @@ def get_model(model_id, device, dtype, finetune_peft_path=None):
 
         model_name = get_model_name_from_path(model_path)
         tokenizer, model, processor, _ = load_pretrained_model(
-            model_path, None, model_name
+            model_path, None, model_name, device_map="auto"
         )
     else:
         raise ValueError(f"Unsupported model {model_id}")
@@ -214,7 +241,7 @@ def get_model(model_id, device, dtype, finetune_peft_path=None):
 
 
 def inference_with_image_path(
-    model_id, image_paths, question, device, dtype, finetune_peft_path, max_tokens_len
+        model_id, image_paths, question, dtype, finetune_peft_path, max_tokens_len
 ):
     """
     Inference the model on the given image paths.
@@ -223,7 +250,6 @@ def inference_with_image_path(
     model_id (str): The model id of HF.
     image_paths (list): The paths of the images.
     question (str): The question to ask the model.
-    device (str): The device to run the model. Recommended to use "cuda".
     dtype (torch.dtype): The dtype of the model. Recommended to use torch.bfloat16.
     finetune_peft_path (str): The path of the finetuned model if any. Default is None.
     max_tokens_len (int): The maximum tokens length. Default is None.
@@ -231,7 +257,7 @@ def inference_with_image_path(
     Returns:
     dict: The inference results.
     """
-    model, tokenizer, processor = get_model(model_id, device, dtype, finetune_peft_path)
+    model, tokenizer, processor = get_model(model_id, dtype, finetune_peft_path)
     res = {}
     for image_id, image_path in enumerate(image_paths):
         res.update(
@@ -243,7 +269,6 @@ def inference_with_image_path(
                 image_path,
                 image_id,
                 question,
-                device,
                 dtype,
                 max_tokens_len,
             )
@@ -252,17 +277,20 @@ def inference_with_image_path(
 
 
 def inference_single(
-    model_id,
-    model,
-    tokenizer,
-    processor,
-    image,
-    image_id,
-    question,
-    device,
-    dtype,
-    max_tokens_len,
+        model_id,
+        model,
+        tokenizer,
+        processor,
+        image,
+        image_id,
+        question,
+        dtype=torch.bfloat16,
+        max_tokens_len=None,
 ):
+    # todo: this script is different from the one on the github since I deleted all the device = "cuda" logic.
+    # What we want to achieve: we need to load model in multiple (device_map = "auto") while making the data able to inference over it.
+    # What I have now: RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:2 and cuda:0!
+    # Clearly, the model and the data is not on the same device due to the device_map = "auto".
     """
     Inference the model on the given a single image.
 
@@ -274,7 +302,6 @@ def inference_single(
     image (str): The path of the image.
     image_id (int): The id of the image.
     question (str): The question to ask the model.
-    device (str): The device to run the model. Recommended to use "cuda".
     dtype (torch.dtype): The dtype of the model. Recommended to use torch.bfloat16.
     max_tokens_len (int): The maximum tokens length. Default is None.
 
@@ -307,7 +334,7 @@ def inference_single(
         "OpenGVLab/InternVL-Chat-V1-5",
         "OpenGVLab/InternVL2-26B",
         "OpenGVLab/InternVL2-40B",
-        "OpenGVLab/InternVL2-Llama3-76B",
+        "OpenGVLab/InternVL2-Llama3-76B"
     ]:
         pixel_values = load_image_ext(image, max_num=6).to(dtype).cuda()
         generation_config = dict(
@@ -334,17 +361,16 @@ def inference_single(
                 max_new_tokens=max_tokens_len,
             )
     elif model_id in ["internlm/internlm-xcomposer2d5-7b"]:
-        with torch.autocast(device_type="cuda", dtype=dtype):
-            model.tokenizer = tokenizer
-            res[image_id], _ = model.chat(
-                tokenizer,
-                question,
-                [image],
-                do_sample=False,
-                num_beams=3,
-                use_meta=True,
-                max_new_tokens=max_tokens_len,
-            )
+        model.tokenizer = tokenizer
+        res[image_id], _ = model.chat(
+            tokenizer,
+            question,
+            [image],
+            do_sample=False,
+            num_beams=3,
+            use_meta=True,
+            max_new_tokens=max_tokens_len,
+        )
     elif model_id == "HuggingFaceM4/idefics2-8b":
         messages = [
             {
@@ -357,7 +383,6 @@ def inference_single(
         ]
         prompt = processor.apply_chat_template(messages, add_generation_prompt=True)
         inputs = processor(text=prompt, images=[image], return_tensors="pt")
-        inputs = {k: v.to(device) for k, v in inputs.items()}
         with torch.no_grad():
             generated_ids = model.generate(**inputs, max_new_tokens=max_tokens_len)
             res[image_id] = processor.batch_decode(
@@ -377,11 +402,11 @@ def inference_single(
             template_version="chat",
         )
         inputs = {
-            "input_ids": input_by_model["input_ids"].unsqueeze(0).to(device),
-            "token_type_ids": input_by_model["token_type_ids"].unsqueeze(0).to(device),
-            "attention_mask": input_by_model["attention_mask"].unsqueeze(0).to(device),
+            "input_ids": input_by_model["input_ids"].unsqueeze(0),
+            "token_type_ids": input_by_model["token_type_ids"].unsqueeze(0),
+            "attention_mask": input_by_model["attention_mask"].unsqueeze(0),
             "images": (
-                [[input_by_model["images"][0].to(device).to(dtype)]]
+                [[input_by_model["images"][0].to(dtype)]]
                 if image is not None
                 else None
             ),
@@ -392,7 +417,7 @@ def inference_single(
         }
         with torch.no_grad():
             outputs = model.generate(**inputs, **gen_kwargs)
-            outputs = outputs[:, inputs["input_ids"].shape[1] :]
+            outputs = outputs[:, inputs["input_ids"].shape[1]:]
             response = tokenizer.decode(outputs[0])
             res[image_id] = response.split("<|end_of_text|>")[0]
     elif model_id == "Qwen/Qwen-VL-Chat":
@@ -419,8 +444,8 @@ def inference_single(
         input_ids = input_ids.input_ids
 
         pred = model.generate(
-            input_ids=input_ids.to(device),
-            attention_mask=attention_mask.to(device),
+            input_ids=input_ids,
+            attention_mask=attention_mask,
             do_sample=False,
             num_beams=1,
             max_new_tokens=max_tokens_len,
@@ -434,7 +459,7 @@ def inference_single(
             images=[image],
         )
         response = tokenizer.decode(
-            pred[0][input_ids.size(1) :].cpu(), skip_special_tokens=True
+            pred[0][input_ids.size(1):].cpu(), skip_special_tokens=True
         ).strip()
         res[image_id] = response
     elif model_id == "THUDM/glm-4v-9b":
@@ -444,13 +469,11 @@ def inference_single(
             tokenize=True,
             return_tensors="pt",
             return_dict=True,
-        ).to(
-            device
-        )  # chat mode
+        )
         gen_kwargs = {"max_length": max_tokens_len, "do_sample": True, "top_k": 1}
         with torch.no_grad():
             outputs = model.generate(**inputs, **gen_kwargs)
-            outputs = outputs[:, inputs["input_ids"].shape[1] :]
+            outputs = outputs[:, inputs["input_ids"].shape[1]:]
             res[image_id] = tokenizer.decode(outputs[0])
     elif model_id in [
         "nyu-visionx/cambrian-34b",
@@ -468,7 +491,7 @@ def inference_single(
             model.config,
             model_name=model_id.split("/")[-1],
         )
-        input_ids = input_ids.to(device=device, non_blocking=True)
+        input_ids = input_ids.to(non_blocking=True)
         with torch.inference_mode():
             output_ids = model.generate(
                 input_ids,
@@ -489,13 +512,12 @@ def inference_single(
 
 
 def inference_single_pipeline(
-    model_id="echo840/Monkey-Chat",
-    image_paths=["main_pic_output.png_stacked_image.jpg"],
-    device="cuda",
-    language="en",
-    dtype=torch.bfloat16,
-    finetune_peft_path=None,
-    max_tokens_len=None,
+        model_id="echo840/Monkey-Chat",
+        image_paths=["main_pic_output.png_stacked_image.jpg"],
+        language="en",
+        dtype=torch.bfloat16,
+        finetune_peft_path=None,
+        max_tokens_len=None,
 ):
     """
     Inference the model on the given image paths and language type.
@@ -503,7 +525,6 @@ def inference_single_pipeline(
     Parameters:
     model_id (str): The model id of HF.
     image_paths (list): The paths of the images.
-    device (str): The device to run the model. Recommended to use "cuda".
     language (str): The language of the question. Default is "en".
     dtype (torch.dtype): The dtype of the model. Recommended to use torch.bfloat16.
     finetune_peft_path (str): The path of the finetuned model if any. Default is None.
@@ -521,7 +542,6 @@ def inference_single_pipeline(
         model_id,
         image_paths,
         question,
-        device,
         dtype,
         finetune_peft_path,
         max_tokens_len=max_tokens_len,
@@ -531,14 +551,13 @@ def inference_single_pipeline(
 
 
 def main(
-    dataset_handler="vcr-org/VCR-wiki-en-hard-test",
-    model_id="OpenGVLab/InternVL2-40B",
-    device="cuda",
-    dtype="bf16",
-    save_interval=5,  # Save progress every 100 images
-    resume=True,  # Whether to resume from the last saved state
-    finetune_peft_path=None,
-    end_index=5000,
+        dataset_handler="vcr-org/VCR-wiki-en-hard-test",
+        model_id="HuggingFaceM4/idefics2-8b",
+        dtype="bf16",
+        save_interval=5,  # Save progress every 100 images
+        resume=True,  # Whether to resume from the last saved state
+        finetune_peft_path=None,
+        end_index=5000,
 ):
     """
     Inference the model on a given dataset.
@@ -547,7 +566,6 @@ def main(
     Parameters:
     dataset_handler (str): The path of the dataset if local or HF dataset handler.
     model_id (str): The model id of HF.
-    device (str): The device to run the model. Recommended to use "cuda".
     dtype (torch.dtype): The dtype of the model. Recommended to use torch.bfloat16.
     save_interval (int): Save progress every save_interval images. Default is 50.
     resume (bool): Whether to resume from the last saved state. Default is True.
@@ -608,7 +626,7 @@ def main(
     else:
         merged_dict = {}
 
-    model, tokenizer, processor = get_model(model_id, device, dtype, finetune_peft_path)
+    model, tokenizer, processor = get_model(model_id, dtype, finetune_peft_path)
 
     question = get_question(language)
     res_stacked_image = {}
@@ -622,8 +640,12 @@ def main(
         stacked_image = dataset[image_id]["stacked_image"]
         only_it_image = dataset[image_id]["only_it_image"]
         only_it_image_small = dataset[image_id]["only_it_image_small"]
-        toke = tokenizer.encode(dataset[image_id]["caption"])
-        max_tokens_len = int(len(toke) * 2)
+        try:
+            toke = tokenizer.encode(dataset[image_id]["caption"])
+            max_tokens_len = int(len(toke) * 2)
+        except:
+            max_tokens_len = 200 # default choice, change if needed
+        
         res_stacked_image.update(
             inference_single(
                 model_id,
@@ -633,7 +655,6 @@ def main(
                 stacked_image,
                 str(image_id),
                 question,
-                device,
                 dtype,
                 max_tokens_len,
             )
@@ -647,7 +668,6 @@ def main(
                 only_it_image,
                 str(image_id),
                 question,
-                device,
                 dtype,
                 max_tokens_len,
             )
@@ -661,7 +681,6 @@ def main(
                 only_it_image_small,
                 str(image_id),
                 question,
-                device,
                 dtype,
                 max_tokens_len,
             )
