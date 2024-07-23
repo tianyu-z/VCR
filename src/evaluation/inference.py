@@ -59,13 +59,13 @@ def get_question(language, caption=None, crossed_texts=None):
         context = ""
     if language == "en":
         return (
-                context
-                + "What is the covered texts in the image? Please restore the covered texts without outputting the explanations."
+            context
+            + "What is the covered texts in the image? Please restore the covered texts without outputting the explanations."
         )
     elif language == "zh":
         return (
-                context
-                + "图像中被覆盖的文本是什么？请在不输出解释的情况下还原被覆盖的文本。"
+            context
+            + "图像中被覆盖的文本是什么？请在不输出解释的情况下还原被覆盖的文本。"
         )
     else:
         raise ValueError("Unsupported language")
@@ -93,19 +93,26 @@ def get_model(model_id, dtype, finetune_peft_path=None):
         model = AutoModel.from_pretrained(
             model_id, device_map="auto", trust_remote_code=True, torch_dtype=dtype
         )
-        tokenizer = AutoTokenizer.from_pretrained(model_id, device_map="auto", trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_id, device_map="auto", trust_remote_code=True
+        )
         model.eval()
         processor = None
     elif model_id in [
         "OpenGVLab/InternVL2-26B",
         "OpenGVLab/InternVL2-40B",
-        "OpenGVLab/InternVL2-Llama3-76B"
+        "OpenGVLab/InternVL2-Llama3-76B",
     ]:
+
         def split_model(model_name):
             device_map = {}
             world_size = torch.cuda.device_count()
-            num_layers = {'InternVL2-8B': 32, 'InternVL2-26B': 48,
-                          'InternVL2-40B': 60, 'InternVL2-Llama3-76B': 80}[model_name]
+            num_layers = {
+                "InternVL2-8B": 32,
+                "InternVL2-26B": 48,
+                "InternVL2-40B": 60,
+                "InternVL2-Llama3-76B": 80,
+            }[model_name]
             # Since the first GPU will be used for ViT, treat it as half a GPU.
             num_layers_per_gpu = math.ceil(num_layers / (world_size - 0.5))
             num_layers_per_gpu = [num_layers_per_gpu] * world_size
@@ -113,16 +120,16 @@ def get_model(model_id, dtype, finetune_peft_path=None):
             layer_cnt = 0
             for i, num_layer in enumerate(num_layers_per_gpu):
                 for j in range(num_layer):
-                    device_map[f'language_model.model.layers.{layer_cnt}'] = i
+                    device_map[f"language_model.model.layers.{layer_cnt}"] = i
                     layer_cnt += 1
-            device_map['vision_model'] = 0
-            device_map['mlp1'] = 0
-            device_map['language_model.model.tok_embeddings'] = 0
-            device_map['language_model.model.embed_tokens'] = 0
-            device_map['language_model.output'] = 0
-            device_map['language_model.model.norm'] = 0
-            device_map['language_model.lm_head'] = 0
-            device_map[f'language_model.model.layers.{num_layers - 1}'] = 0
+            device_map["vision_model"] = 0
+            device_map["mlp1"] = 0
+            device_map["language_model.model.tok_embeddings"] = 0
+            device_map["language_model.model.embed_tokens"] = 0
+            device_map["language_model.output"] = 0
+            device_map["language_model.model.norm"] = 0
+            device_map["language_model.lm_head"] = 0
+            device_map[f"language_model.model.layers.{num_layers - 1}"] = 0
 
             return device_map
 
@@ -132,7 +139,9 @@ def get_model(model_id, dtype, finetune_peft_path=None):
         model = AutoModel.from_pretrained(
             model_id, device_map=device_map, trust_remote_code=True, torch_dtype=dtype
         )
-        tokenizer = AutoTokenizer.from_pretrained(model_id, device_map="auto", trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_id, device_map="auto", trust_remote_code=True
+        )
         model.eval()
         processor = None
     elif model_id in [
@@ -167,7 +176,9 @@ def get_model(model_id, dtype, finetune_peft_path=None):
                 model_id, device_map="auto", torch_dtype=dtype, trust_remote_code=True
             )
 
-        tokenizer = AutoTokenizer.from_pretrained(model_id, device_map="auto", trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_id, device_map="auto", trust_remote_code=True
+        )
         model.eval()
         processor = None
     elif model_id == "HuggingFaceM4/idefics2-8b":
@@ -187,14 +198,20 @@ def get_model(model_id, dtype, finetune_peft_path=None):
     ]:
         if is_finetune:
             model = AutoPeftModelForCausalLMWithResizedWTE.from_pretrained(
-                finetune_peft_path, device_map="auto", trust_remote_code=True, torch_dtype=dtype
+                finetune_peft_path,
+                device_map="auto",
+                trust_remote_code=True,
+                torch_dtype=dtype,
             ).eval()
         else:
             if "Qwen" in model_id:
                 from QWen.modeling_qwen import QWenLMHeadModel
 
                 model = QWenLMHeadModel.from_pretrained(
-                    model_id, device_map="auto", trust_remote_code=True, torch_dtype=dtype
+                    model_id,
+                    device_map="auto",
+                    trust_remote_code=True,
+                    torch_dtype=dtype,
                 ).eval()
             else:
                 model = AutoModelForCausalLM.from_pretrained(
@@ -207,6 +224,22 @@ def get_model(model_id, dtype, finetune_peft_path=None):
         tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
         model.eval()
         processor = None
+    elif model_id in ["THUDM/cogvlm-chat-hf"]:
+        from transformers import AutoModelForCausalLM, LlamaTokenizer
+
+        processor = None
+        tokenizer = LlamaTokenizer.from_pretrained("lmsys/vicuna-7b-v1.5")
+        model = (
+            AutoModelForCausalLM.from_pretrained(
+                "THUDM/cogvlm-chat-hf",
+                torch_dtype=torch.bfloat16,
+                low_cpu_mem_usage=True,
+                trust_remote_code=True,
+            )
+            .eval()
+            .to(device)
+        )
+
     elif model_id in ["echo840/Monkey-Chat"]:
         if is_finetune:
             raise ValueError(f"Fine-tuning is not supported for {model_id}")
@@ -241,7 +274,7 @@ def get_model(model_id, dtype, finetune_peft_path=None):
 
 
 def inference_with_image_path(
-        model_id, image_paths, question, dtype, finetune_peft_path, max_tokens_len
+    model_id, image_paths, question, dtype, finetune_peft_path, max_tokens_len
 ):
     """
     Inference the model on the given image paths.
@@ -277,15 +310,15 @@ def inference_with_image_path(
 
 
 def inference_single(
-        model_id,
-        model,
-        tokenizer,
-        processor,
-        image,
-        image_id,
-        question,
-        dtype=torch.bfloat16,
-        max_tokens_len=None,
+    model_id,
+    model,
+    tokenizer,
+    processor,
+    image,
+    image_id,
+    question,
+    dtype=torch.bfloat16,
+    max_tokens_len=None,
 ):
     # todo: this script is different from the one on the github since I deleted all the device = "cuda" logic.
     # What we want to achieve: we need to load model in multiple (device_map = "auto") while making the data able to inference over it.
@@ -334,7 +367,7 @@ def inference_single(
         "OpenGVLab/InternVL-Chat-V1-5",
         "OpenGVLab/InternVL2-26B",
         "OpenGVLab/InternVL2-40B",
-        "OpenGVLab/InternVL2-Llama3-76B"
+        "OpenGVLab/InternVL2-Llama3-76B",
     ]:
         pixel_values = load_image_ext(image, max_num=6).to(dtype).cuda()
         generation_config = dict(
@@ -406,9 +439,7 @@ def inference_single(
             "token_type_ids": input_by_model["token_type_ids"].unsqueeze(0),
             "attention_mask": input_by_model["attention_mask"].unsqueeze(0),
             "images": (
-                [[input_by_model["images"][0].to(dtype)]]
-                if image is not None
-                else None
+                [[input_by_model["images"][0].to(dtype)]] if image is not None else None
             ),
         }
         gen_kwargs = {
@@ -417,9 +448,25 @@ def inference_single(
         }
         with torch.no_grad():
             outputs = model.generate(**inputs, **gen_kwargs)
-            outputs = outputs[:, inputs["input_ids"].shape[1]:]
+            outputs = outputs[:, inputs["input_ids"].shape[1] :]
             response = tokenizer.decode(outputs[0])
             res[image_id] = response.split("<|end_of_text|>")[0]
+    elif model_id == "THUDM/cogvlm-chat-hf":
+        inputs = model.build_conversation_input_ids(
+            tokenizer, query=question, history=[], images=[image]
+        )  # chat mode
+        inputs = {
+            "input_ids": inputs["input_ids"].unsqueeze(0).to(device),
+            "token_type_ids": inputs["token_type_ids"].unsqueeze(0).to(device),
+            "attention_mask": inputs["attention_mask"].unsqueeze(0).to(device),
+            "images": [[inputs["images"][0].to(device).to(torch.bfloat16)]],
+        }
+        gen_kwargs = {"max_length": 2048, "do_sample": False}
+
+        with torch.no_grad():
+            outputs = model.generate(**inputs, **gen_kwargs)
+            outputs = outputs[:, inputs["input_ids"].shape[1] :]
+            res[image_id] = tokenizer.decode(outputs[0])
     elif model_id == "Qwen/Qwen-VL-Chat":
         query = tokenizer.from_list_format(
             [
@@ -459,7 +506,7 @@ def inference_single(
             images=[image],
         )
         response = tokenizer.decode(
-            pred[0][input_ids.size(1):].cpu(), skip_special_tokens=True
+            pred[0][input_ids.size(1) :].cpu(), skip_special_tokens=True
         ).strip()
         res[image_id] = response
     elif model_id == "THUDM/glm-4v-9b":
@@ -473,7 +520,7 @@ def inference_single(
         gen_kwargs = {"max_length": max_tokens_len, "do_sample": True, "top_k": 1}
         with torch.no_grad():
             outputs = model.generate(**inputs, **gen_kwargs)
-            outputs = outputs[:, inputs["input_ids"].shape[1]:]
+            outputs = outputs[:, inputs["input_ids"].shape[1] :]
             res[image_id] = tokenizer.decode(outputs[0])
     elif model_id in [
         "nyu-visionx/cambrian-34b",
@@ -512,12 +559,12 @@ def inference_single(
 
 
 def inference_single_pipeline(
-        model_id="echo840/Monkey-Chat",
-        image_paths=["main_pic_output.png_stacked_image.jpg"],
-        language="en",
-        dtype=torch.bfloat16,
-        finetune_peft_path=None,
-        max_tokens_len=None,
+    model_id="echo840/Monkey-Chat",
+    image_paths=["main_pic_output.png_stacked_image.jpg"],
+    language="en",
+    dtype=torch.bfloat16,
+    finetune_peft_path=None,
+    max_tokens_len=None,
 ):
     """
     Inference the model on the given image paths and language type.
@@ -551,13 +598,14 @@ def inference_single_pipeline(
 
 
 def main(
-        dataset_handler="vcr-org/VCR-wiki-en-hard-test",
-        model_id="HuggingFaceM4/idefics2-8b",
-        dtype="bf16",
-        save_interval=5,  # Save progress every 100 images
-        resume=True,  # Whether to resume from the last saved state
-        finetune_peft_path=None,
-        end_index=5000,
+    dataset_handler="vcr-org/VCR-wiki-en-hard-test",
+    model_id="THUDM/cogvlm-chat-hf",
+    device="cuda",
+    dtype="bf16",
+    save_interval=5,  # Save progress every 100 images
+    resume=True,  # Whether to resume from the last saved state
+    finetune_peft_path=None,
+    end_index=5000,
 ):
     """
     Inference the model on a given dataset.
@@ -644,8 +692,8 @@ def main(
             toke = tokenizer.encode(dataset[image_id]["caption"])
             max_tokens_len = int(len(toke) * 2)
         except:
-            max_tokens_len = 200 # default choice, change if needed
-        
+            max_tokens_len = 200  # default choice, change if needed
+
         res_stacked_image.update(
             inference_single(
                 model_id,
