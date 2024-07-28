@@ -186,7 +186,7 @@ class InternLMXComposer2ForCausalLM(InternLM2PreTrainedModel):
             image = self.vis_processor(image).unsqueeze(0).to(self.device)
         else:
             assert isinstance(image, torch.Tensor)
-
+        image = image.to(self.dtype)
         img_embeds, atts_img, img_target = self.img2emb(image)
         return img_embeds
 

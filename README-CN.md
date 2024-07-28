@@ -46,12 +46,14 @@ for obs in dataset['train']: # 或 'validation' 或 'test'
     # 在此处编写你的代码
 ```
 ## 数据集列表
-|  数据集   | 下载链接 |
-|  ----  | ----  | 
-|  100 测试子集  | <li>[🤗vcr-org/VCR-wiki-en-easy-test-100](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-easy-test-100) <li> [🤗vcr-org/VCR-wiki-en-hard-test-100](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-hard-test-100) <li> [🤗vcr-org/VCR-wiki-zh-easy-test-100](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-easy-test-100) <li> [🤗vcr-org/VCR-wiki-zh-hard-test-100](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-hard-test-100)|
-|  500 测试子集  | <li>[🤗vcr-org/VCR-wiki-en-easy-test-500](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-easy-test-500) <li> [🤗vcr-org/VCR-wiki-en-hard-test-500](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-hard-test-500) <li> [🤗vcr-org/VCR-wiki-zh-easy-test-500](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-easy-test-500) <li> [🤗vcr-org/VCR-wiki-zh-hard-test-500](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-hard-test-500)|
-|  5000 (完整) 测试集   | <li>[🤗vcr-org/VCR-wiki-en-easy-test](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-easy-test) <li> [🤗vcr-org/VCR-wiki-en-hard-test](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-hard-test) <li> [🤗vcr-org/VCR-wiki-zh-easy-test](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-easy-test) <li> [🤗vcr-org/VCR-wiki-zh-hard-test](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-hard-test)|
-|  训练验证测试 (完整) 集    | <li>[🤗vcr-org/VCR-wiki-en-easy](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-easy) <li> [🤗vcr-org/VCR-wiki-en-hard](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-hard) <li> [🤗vcr-org/VCR-wiki-zh-easy](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-easy) <li> [🤗vcr-org/VCR-wiki-zh-hard](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-hard)|## 训练和评估数据集
+|  数据集   | HF下载链接 | 魔搭下载链接 |
+|  ----  | ----  | ----  | 
+|  100 测试子集  | <li>[🤗vcr-org/VCR-wiki-en-easy-test-100](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-easy-test-100) <li> [🤗vcr-org/VCR-wiki-en-hard-test-100](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-hard-test-100) <li> [🤗vcr-org/VCR-wiki-zh-easy-test-100](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-easy-test-100) <li> [🤗vcr-org/VCR-wiki-zh-hard-test-100](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-hard-test-100)|<li><img src="./assets/modelscope_logo.png" width="20px">[vcr-org/VCR-wiki-en-easy-test-100](https://modelscope.cn/datasets/vcr-org/VCR-wiki-en-easy-test-100) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-en-hard-test-100](https://modelscope.cn/datasets/vcr-org/VCR-wiki-en-hard-test-100) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-zh-easy-test-100](https://modelscope.cn/datasets/vcr-org/VCR-wiki-zh-easy-test-100) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-zh-hard-test-100](https://modelscope.cn/datasets/vcr-org/VCR-wiki-zh-hard-test-100)|
+|  500 测试子集  | <li>[🤗vcr-org/VCR-wiki-en-easy-test-500](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-easy-test-500) <li> [🤗vcr-org/VCR-wiki-en-hard-test-500](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-hard-test-500) <li> [🤗vcr-org/VCR-wiki-zh-easy-test-500](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-easy-test-500) <li> [🤗vcr-org/VCR-wiki-zh-hard-test-500](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-hard-test-500)|<li>[<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-en-easy-test-500](https://modelscope.cn/datasets/vcr-org/VCR-wiki-en-easy-test-500) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-en-hard-test-500](https://modelscope.cn/datasets/vcr-org/VCR-wiki-en-hard-test-500) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-zh-easy-test-500](https://modelscope.cn/datasets/vcr-org/VCR-wiki-zh-easy-test-500) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-zh-hard-test-500](https://modelscope.cn/datasets/vcr-org/VCR-wiki-zh-hard-test-500)|
+|  5000 (完整) 测试集   | <li>[🤗vcr-org/VCR-wiki-en-easy-test](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-easy-test) <li> [🤗vcr-org/VCR-wiki-en-hard-test](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-hard-test) <li> [🤗vcr-org/VCR-wiki-zh-easy-test](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-easy-test) <li> [🤗vcr-org/VCR-wiki-zh-hard-test](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-hard-test)|<li>[<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-en-easy-test](https://modelscope.cn/datasets/vcr-org/VCR-wiki-en-easy-test) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-en-hard-test](https://modelscope.cn/datasets/vcr-org/VCR-wiki-en-hard-test) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-zh-easy-test](https://modelscope.cn/datasets/vcr-org/VCR-wiki-zh-easy-test) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-zh-hard-test](https://modelscope.cn/datasets/vcr-org/VCR-wiki-zh-hard-test)|
+|  训练验证测试 (完整) 集    | <li>[🤗vcr-org/VCR-wiki-en-easy](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-easy) <li> [🤗vcr-org/VCR-wiki-en-hard](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-hard) <li> [🤗vcr-org/VCR-wiki-zh-easy](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-easy) <li> [🤗vcr-org/VCR-wiki-zh-hard](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-hard)|<li>[<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-en-easy](https://modelscope.cn/datasets/vcr-org/VCR-wiki-en-easy) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-en-hard](https://modelscope.cn/datasets/vcr-org/VCR-wiki-en-hard) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-zh-easy](https://modelscope.cn/datasets/vcr-org/VCR-wiki-zh-easy) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-zh-hard](https://modelscope.cn/datasets/vcr-org/VCR-wiki-zh-hard)|
+
+在论文中，我们使用 500 个测试子集对封闭源模型进行评估，使用 5000 个测试子集对开放源模型进行评估。100 测试子集用于人工评估。
 
 # 介绍
 我们呈现了VCR-wiki，这是一个为视觉字幕恢复（VCR）任务设计的数据集。
@@ -110,7 +112,7 @@ EM 表示 "完全匹配"，Jaccard 表示 "Jaccard 相似度"。封闭源代码�
 
 # 模型评估
 
-## 方法1（推荐）：使用评估脚本
+## 方法1：使用评估脚本
 ### 开源评估
 我们支持的开源模型_id:
 ```python
@@ -123,10 +125,16 @@ EM 表示 "完全匹配"，Jaccard 表示 "Jaccard 相似度"。封闭源代码�
 "Qwen/Qwen-VL-Chat",
 "THUDM/cogvlm2-llama3-chinese-chat-19B",
 "THUDM/cogvlm2-llama3-chat-19B",
+"THUDM/cogvlm-chat-hf",
 "echo840/Monkey-Chat",
 "THUDM/glm-4v-9b",
+"nyu-visionx/cambrian-phi3-3b",
+"nyu-visionx/cambrian-8b",
+"nyu-visionx/cambrian-13b",
 "nyu-visionx/cambrian-34b",
-"OpenGVLab/InternVL2-26B"]
+"OpenGVLab/InternVL2-26B",
+"OpenGVLab/InternVL2-40B"
+"OpenGVLab/InternVL2-Llama3-76B",]
 ```
 对于未在列表中的模型，它们未与huggingface集成，请参考它们的github仓库创建评估流程。
 
@@ -161,13 +169,34 @@ python3 evaluation_metrics.py --model_id gpt4o --output_path . --json_filename "
 python3 gather_results.py --jsons_path .
 ```
 
-## 方法二：使用 lmms-eval 框架
-如果 lmms-eval 框架不支持您的模型推理方法，您可能需要将其整合进去。详细信息请参考[这里](https://github.com/EvolvingLMMs-Lab/lmms-eval/blob/main/docs/model_guide.md)
+以下是中文翻译：
+
+## 方法2：使用 [VLMEvalKit](https://github.com/open-compass/VLMEvalKit) 框架
+
+如果 VLMEvalKit 框架不支持您的模型的推理方法，您可能需要将其整合进去。详情请参考[这里](https://github.com/open-compass/VLMEvalKit/blob/main/docs/en/Development.md)。
+
+```bash
+git clone https://github.com/open-compass/VLMEvalKit.git
+cd VLMEvalKit
+# 我们以 HuggingFaceM4/idefics2-8b 和 VCR_EN_EASY_ALL 为例
+python run.py --data VCR_EN_EASY_ALL --model idefics2_8b --verbose
+```
+
+您可以在[这里](https://github.com/open-compass/VLMEvalKit/blob/main/vlmeval/config.py)找到支持的模型列表。
+
+## 方法3：使用 lmms-eval 框架
+
+如果 lmms-eval 框架不支持您的模型的推理方法，您可能需要将其整合进去。详情请参考[这里](https://github.com/EvolvingLMMs-Lab/lmms-eval/blob/main/docs/model_guide.md)。
+
 ```bash
 pip install git+https://github.com/EvolvingLMMs-Lab/lmms-eval.git
-# 我们以 HuggingFaceM4/idefics2-8b 和 vcr_wiki_en_easy 作为示例
+# 我们以 HuggingFaceM4/idefics2-8b 和 vcr_wiki_en_easy 为例
 python3 -m accelerate.commands.launch --num_processes=8 -m lmms_eval --model idefics2 --model_args pretrained="HuggingFaceM4/idefics2-8b" --tasks vcr_wiki_en_easy --batch_size 1 --log_samples --log_samples_suffix HuggingFaceM4_idefics2-8b_vcr_wiki_en_easy --output_path ./logs/
 ```
+
+您可以在[这里](https://github.com/EvolvingLMMs-Lab/lmms-eval/tree/main/lmms_eval/models)找到支持的模型列表。
+
+
 # VCR Transform 的使用
 ```python
 from vcr_transform import VCRTransform

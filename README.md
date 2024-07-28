@@ -44,12 +44,16 @@ for obs in dataset['train']: # or 'validation' or 'test'
     # your own code here
 ```
 ## Dataset List
-|  Dataset   | Download Link |
-|  ----  | ----  | 
-|  100 Test Subset  | <li>[🤗vcr-org/VCR-wiki-en-easy-test-100](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-easy-test-100) <li> [🤗vcr-org/VCR-wiki-en-hard-test-100](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-hard-test-100) <li> [🤗vcr-org/VCR-wiki-zh-easy-test-100](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-easy-test-100) <li> [🤗vcr-org/VCR-wiki-zh-hard-test-100](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-hard-test-100)|
-|  500 Test Subset  | <li>[🤗vcr-org/VCR-wiki-en-easy-test-500](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-easy-test-500) <li> [🤗vcr-org/VCR-wiki-en-hard-test-500](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-hard-test-500) <li> [🤗vcr-org/VCR-wiki-zh-easy-test-500](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-easy-test-500) <li> [🤗vcr-org/VCR-wiki-zh-hard-test-500](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-hard-test-500)|
-|  5000 (Full) Test Set   | <li>[🤗vcr-org/VCR-wiki-en-easy-test](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-easy-test) <li> [🤗vcr-org/VCR-wiki-en-hard-test](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-hard-test) <li> [🤗vcr-org/VCR-wiki-zh-easy-test](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-easy-test) <li> [🤗vcr-org/VCR-wiki-zh-hard-test](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-hard-test)|
-|  Train Validation Test (Full) Set    | <li>[🤗vcr-org/VCR-wiki-en-easy](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-easy) <li> [🤗vcr-org/VCR-wiki-en-hard](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-hard) <li> [🤗vcr-org/VCR-wiki-zh-easy](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-easy) <li> [🤗vcr-org/VCR-wiki-zh-hard](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-hard)|## Training and Evaluation Datasets
+|  Dataset   | HF Download Link | MD Download Link |
+|  ----  | ----  | ----  | 
+|  100 Test Subset  | <li>[🤗vcr-org/VCR-wiki-en-easy-test-100](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-easy-test-100) <li> [🤗vcr-org/VCR-wiki-en-hard-test-100](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-hard-test-100) <li> [🤗vcr-org/VCR-wiki-zh-easy-test-100](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-easy-test-100) <li> [🤗vcr-org/VCR-wiki-zh-hard-test-100](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-hard-test-100)|<li><img src="./assets/modelscope_logo.png" width="20px">[vcr-org/VCR-wiki-en-easy-test-100](https://modelscope.cn/datasets/vcr-org/VCR-wiki-en-easy-test-100) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-en-hard-test-100](https://modelscope.cn/datasets/vcr-org/VCR-wiki-en-hard-test-100) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-zh-easy-test-100](https://modelscope.cn/datasets/vcr-org/VCR-wiki-zh-easy-test-100) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-zh-hard-test-100](https://modelscope.cn/datasets/vcr-org/VCR-wiki-zh-hard-test-100)|
+|  500 Test Subset  | <li>[🤗vcr-org/VCR-wiki-en-easy-test-500](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-easy-test-500) <li> [🤗vcr-org/VCR-wiki-en-hard-test-500](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-hard-test-500) <li> [🤗vcr-org/VCR-wiki-zh-easy-test-500](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-easy-test-500) <li> [🤗vcr-org/VCR-wiki-zh-hard-test-500](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-hard-test-500)|<li>[<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-en-easy-test-500](https://modelscope.cn/datasets/vcr-org/VCR-wiki-en-easy-test-500) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-en-hard-test-500](https://modelscope.cn/datasets/vcr-org/VCR-wiki-en-hard-test-500) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-zh-easy-test-500](https://modelscope.cn/datasets/vcr-org/VCR-wiki-zh-easy-test-500) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-zh-hard-test-500](https://modelscope.cn/datasets/vcr-org/VCR-wiki-zh-hard-test-500)|
+|  5000 (Full) Test Set   | <li>[🤗vcr-org/VCR-wiki-en-easy-test](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-easy-test) <li> [🤗vcr-org/VCR-wiki-en-hard-test](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-hard-test) <li> [🤗vcr-org/VCR-wiki-zh-easy-test](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-easy-test) <li> [🤗vcr-org/VCR-wiki-zh-hard-test](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-hard-test)|<li>[<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-en-easy-test](https://modelscope.cn/datasets/vcr-org/VCR-wiki-en-easy-test) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-en-hard-test](https://modelscope.cn/datasets/vcr-org/VCR-wiki-en-hard-test) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-zh-easy-test](https://modelscope.cn/datasets/vcr-org/VCR-wiki-zh-easy-test) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-zh-hard-test](https://modelscope.cn/datasets/vcr-org/VCR-wiki-zh-hard-test)|
+|  Train Validation Test (Full) Set    | <li>[🤗vcr-org/VCR-wiki-en-easy](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-easy) <li> [🤗vcr-org/VCR-wiki-en-hard](https://huggingface.co/datasets/vcr-org/VCR-wiki-en-hard) <li> [🤗vcr-org/VCR-wiki-zh-easy](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-easy) <li> [🤗vcr-org/VCR-wiki-zh-hard](https://huggingface.co/datasets/vcr-org/VCR-wiki-zh-hard)|<li>[<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-en-easy](https://modelscope.cn/datasets/vcr-org/VCR-wiki-en-easy) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-en-hard](https://modelscope.cn/datasets/vcr-org/VCR-wiki-en-hard) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-zh-easy](https://modelscope.cn/datasets/vcr-org/VCR-wiki-zh-easy) <li> [<img src="./assets/modelscope_logo.png" width="20px">vcr-org/VCR-wiki-zh-hard](https://modelscope.cn/datasets/vcr-org/VCR-wiki-zh-hard)|
+
+
+In the paper, we use the 500 Test Subset for closed source model and 5000 Test Subset for open source model evaluation. The 100 Test Subset is used for human evaluation.
+
 
 # Introduction
 We present VCR-wiki, a dataset designed for the Visual Caption Restoration (VCR) task. 
@@ -110,7 +114,7 @@ EM means `"Exact Match"` and Jaccard means `"Jaccard Similarity"`. The best in c
 
 # Model Evaluation
 
-## Method 1 (recommended): use the evaluation script
+## Method 1: use the evaluation script
 ### Open-source evaluation
 We support open-source model_id: 
 ```python
@@ -123,10 +127,16 @@ We support open-source model_id:
 "Qwen/Qwen-VL-Chat",
 "THUDM/cogvlm2-llama3-chinese-chat-19B",
 "THUDM/cogvlm2-llama3-chat-19B",
+"THUDM/cogvlm-chat-hf",
 "echo840/Monkey-Chat",
 "THUDM/glm-4v-9b",
+"nyu-visionx/cambrian-phi3-3b",
+"nyu-visionx/cambrian-8b",
+"nyu-visionx/cambrian-13b",
 "nyu-visionx/cambrian-34b",
-"OpenGVLab/InternVL2-26B"]
+"OpenGVLab/InternVL2-26B",
+"OpenGVLab/InternVL2-40B"
+"OpenGVLab/InternVL2-Llama3-76B",]
 ```
 For the models not on list, they are not intergated with huggingface, please refer to their github repo to create the evaluation pipeline. Examples of the inference logic are in `src/evaluation/inference.py`
 
@@ -160,14 +170,25 @@ python3 evaluation_metrics.py --model_id gpt4o --output_path . --json_filename "
 # To get the mean score of all the `{model_id}_{difficulty}_{language}_evaluation_result.json` in `jsons_path` (and the std, confidence interval if `--bootstrap`) of the evaluation metrics
 python3 gather_results.py --jsons_path .
 ```
+## Method 2: use [VLMEvalKit](https://github.com/open-compass/VLMEvalKit) framework
+You may need to incorporate the inference method of your model if the VLMEvalKit framework does not support it. For details, please refer to [here](https://github.com/open-compass/VLMEvalKit/blob/main/docs/en/Development.md)
+```bash
+git clone https://github.com/open-compass/VLMEvalKit.git
+cd VLMEvalKit
+# We use HuggingFaceM4/idefics2-8b and VCR_EN_EASY_ALL as an example
+python run.py --data VCR_EN_EASY_ALL --model idefics2_8b --verbose
+```
+You may find the supported model list [here](https://github.com/open-compass/VLMEvalKit/blob/main/vlmeval/config.py).
 
-## Method 2: use lmms-eval framework
+## Method 3: use lmms-eval framework
 You may need to incorporate the inference method of your model if the lmms-eval framework does not support it. For details, please refer to [here](https://github.com/EvolvingLMMs-Lab/lmms-eval/blob/main/docs/model_guide.md)
 ```bash
 pip install git+https://github.com/EvolvingLMMs-Lab/lmms-eval.git
 # We use HuggingFaceM4/idefics2-8b and vcr_wiki_en_easy as an example
 python3 -m accelerate.commands.launch --num_processes=8 -m lmms_eval --model idefics2 --model_args pretrained="HuggingFaceM4/idefics2-8b" --tasks vcr_wiki_en_easy --batch_size 1 --log_samples --log_samples_suffix HuggingFaceM4_idefics2-8b_vcr_wiki_en_easy --output_path ./logs/
 ```
+You may find the supported model list [here](https://github.com/EvolvingLMMs-Lab/lmms-eval/tree/main/lmms_eval/models).
+
 # Usage of VCR Transform
 ```python
 from vcr_transform import VCRTransform

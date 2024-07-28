@@ -6,10 +6,11 @@ from urllib.request import urlopen
 from PIL import Image, ImageDraw, ImageFont
 from torchvision.transforms.functional import InterpolationMode
 import torchvision.transforms as transforms
-from decord import VideoReader
+
 
 def get_font():
-    truetype_url = 'https://cdn-lfs-us-1.huggingface.co/repos/19/7a/197a751ef710da1639736f1b5c9ebc26bd38d236aba7f10bcf8b553084c66907/336a838f4a78e150826be608dae69de59d50948c3d2b71760e096ae764154bdc?response-content-disposition=inline%3B+filename*%3DUTF-8%27%27SimHei.ttf%3B+filename%3D%22SimHei.ttf%22%3B&response-content-type=font%2Fttf&Expires=1720275312&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTcyMDI3NTMxMn19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2RuLWxmcy11cy0xLmh1Z2dpbmdmYWNlLmNvL3JlcG9zLzE5LzdhLzE5N2E3NTFlZjcxMGRhMTYzOTczNmYxYjVjOWViYzI2YmQzOGQyMzZhYmE3ZjEwYmNmOGI1NTMwODRjNjY5MDcvMzM2YTgzOGY0YTc4ZTE1MDgyNmJlNjA4ZGFlNjlkZTU5ZDUwOTQ4YzNkMmI3MTc2MGUwOTZhZTc2NDE1NGJkYz9yZXNwb25zZS1jb250ZW50LWRpc3Bvc2l0aW9uPSomcmVzcG9uc2UtY29udGVudC10eXBlPSoifV19&Signature=aZAXME5llGK90xUsPHRuWouco5T92ngs63hhW0gIAWmrUup4Ed5y4lSqB5khoLCLlMHK5lC4QJ58JTFFnmVFgFsKA-XfggYJLXu-TIC6DnvQCLz4L6EvLwCR05jzWOWn3trDorazP%7Enb8nuYKPgwGkpsukvCcqpx5Y0%7EfA4XsUCmcaddmkhFkkS1Wp2QWDnJjFGkuRnm8fQLW%7EG3JCdd7EyBkr2uWG%7E3W7ff62l-f%7EQTvtXIpYTHF3SAeqbB-DYQMUIbQJTuSs0TiQPt3WYvchrbuKN0aqR5OLvDJI2Fl0omJCL-wESyj9L%7EC2sCyY2LCDoE8b6-omgbQal2KHv7cA__&Key-Pair-Id=K24J24Z295AEI9'
+    # truetype_url = 'https://cdn-lfs-us-1.huggingface.co/repos/19/7a/197a751ef710da1639736f1b5c9ebc26bd38d236aba7f10bcf8b553084c66907/336a838f4a78e150826be608dae69de59d50948c3d2b71760e096ae764154bdc?response-content-disposition=inline%3B+filename*%3DUTF-8%27%27SimHei.ttf%3B+filename%3D%22SimHei.ttf%22%3B&response-content-type=font%2Fttf&Expires=1720275312&Policy=eyJTdGF0ZW1lbnQiOlt7IkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTcyMDI3NTMxMn19LCJSZXNvdXJjZSI6Imh0dHBzOi8vY2RuLWxmcy11cy0xLmh1Z2dpbmdmYWNlLmNvL3JlcG9zLzE5LzdhLzE5N2E3NTFlZjcxMGRhMTYzOTczNmYxYjVjOWViYzI2YmQzOGQyMzZhYmE3ZjEwYmNmOGI1NTMwODRjNjY5MDcvMzM2YTgzOGY0YTc4ZTE1MDgyNmJlNjA4ZGFlNjlkZTU5ZDUwOTQ4YzNkMmI3MTc2MGUwOTZhZTc2NDE1NGJkYz9yZXNwb25zZS1jb250ZW50LWRpc3Bvc2l0aW9uPSomcmVzcG9uc2UtY29udGVudC10eXBlPSoifV19&Signature=aZAXME5llGK90xUsPHRuWouco5T92ngs63hhW0gIAWmrUup4Ed5y4lSqB5khoLCLlMHK5lC4QJ58JTFFnmVFgFsKA-XfggYJLXu-TIC6DnvQCLz4L6EvLwCR05jzWOWn3trDorazP%7Enb8nuYKPgwGkpsukvCcqpx5Y0%7EfA4XsUCmcaddmkhFkkS1Wp2QWDnJjFGkuRnm8fQLW%7EG3JCdd7EyBkr2uWG%7E3W7ff62l-f%7EQTvtXIpYTHF3SAeqbB-DYQMUIbQJTuSs0TiQPt3WYvchrbuKN0aqR5OLvDJI2Fl0omJCL-wESyj9L%7EC2sCyY2LCDoE8b6-omgbQal2KHv7cA__&Key-Pair-Id=K24J24Z295AEI9'
+    truetype_url = "https://huggingface.co/internlm/internlm-xcomposer2d5-7b/resolve/main/SimHei.ttf"
     ff = urlopen(truetype_url)
     font = ImageFont.truetype(ff, size=40)
     return font
@@ -125,6 +126,7 @@ def frame2img(imgs, font):
     return new_img
 
 def load_video(video_path, num_frm=32, start=None, end=None):
+    from decord import VideoReader
     vid = VideoReader(video_path, num_threads=1)
     fps = vid.get_avg_fps()
     t_stride = int(round(float(fps) / int(1)))
