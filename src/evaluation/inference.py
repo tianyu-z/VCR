@@ -456,10 +456,12 @@ def inference_single(
             tokenizer, query=question, history=[], images=[image]
         )  # chat mode
         inputs = {
-            "input_ids": inputs["input_ids"].unsqueeze(0).to(device),
-            "token_type_ids": inputs["token_type_ids"].unsqueeze(0).to(device),
-            "attention_mask": inputs["attention_mask"].unsqueeze(0).to(device),
-            "images": [[inputs["images"][0].to(device).to(torch.bfloat16)]],
+            "input_ids": input_by_model["input_ids"].unsqueeze(0),
+            "token_type_ids": input_by_model["token_type_ids"].unsqueeze(0),
+            "attention_mask": input_by_model["attention_mask"].unsqueeze(0),
+            "images": (
+                [[input_by_model["images"][0].to(dtype)]] if image is not None else None
+            ),
         }
         gen_kwargs = {"max_length": 2048, "do_sample": False}
 
