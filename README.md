@@ -145,8 +145,10 @@ pip install -r requirements.txt
 # We use HuggingFaceM4/idefics2-8b and vcr_wiki_en_easy as an example
 cd src/evaluation
 # Evaluate the results and save the evaluation metrics to {model_id}_{difficulty}_{language}_evaluation_result.json
-python3 evaluation_pipeline.py --dataset_handler "vcr-org/VCR-wiki-en-easy-test" --model_id HuggingFaceM4/idefics2-8b --output_path . --bootstrap --end_index 5000
+python3 evaluation_pipeline.py --dataset_handler "vcr-org/VCR-wiki-en-easy-test" --model_id HuggingFaceM4/idefics2-8b --device "cuda" --output_path . --bootstrap --end_index 5000
 ```
+For large models like "OpenGVLab/InternVL2-Llama3-76B", you may have to use multi-GPU to do the evaluation. You can specify --device to None to use all GPUs available.
+
 
 ### Close-source evaluation (using API)
 We provide the evaluation script for the close-source models in `src/evaluation/closed_source_eval.py`.
@@ -180,6 +182,27 @@ python run.py --data VCR_EN_EASY_ALL --model idefics2_8b --verbose
 ```
 You may find the supported model list [here](https://github.com/open-compass/VLMEvalKit/blob/main/vlmeval/config.py).
 
+`VLMEvalKit` supports the following VCR `--data` settings:
+
+* English
+  * Easy
+    * `VCR_EN_EASY_ALL` (full test set, 5000 instances)
+    * `VCR_EN_EASY_500` (first 500 instances in the VCR_EN_EASY_ALL setting)
+    * `VCR_EN_EASY_100` (first 100 instances in the VCR_EN_EASY_ALL setting)
+  * Hard
+    * `VCR_EN_HARD_ALL` (full test set, 5000 instances)
+    * `VCR_EN_HARD_500` (first 500 instances in the VCR_EN_HARD_ALL setting)
+    * `VCR_EN_HARD_100` (first 100 instances in the VCR_EN_HARD_ALL setting)
+* Chinese
+  * Easy
+    * `VCR_ZH_EASY_ALL` (full test set, 5000 instances)
+    * `VCR_ZH_EASY_500` (first 500 instances in the VCR_ZH_EASY_ALL setting)
+    * `VCR_ZH_EASY_100` (first 100 instances in the VCR_ZH_EASY_ALL setting)
+  * Hard
+    * `VCR_ZH_HARD_ALL` (full test set, 5000 instances)
+    * `VCR_ZH_HARD_500` (first 500 instances in the VCR_ZH_HARD_ALL setting)
+    * `VCR_ZH_HARD_100` (first 100 instances in the VCR_ZH_HARD_ALL setting)
+
 ## Method 3: use lmms-eval framework
 You may need to incorporate the inference method of your model if the lmms-eval framework does not support it. For details, please refer to [here](https://github.com/EvolvingLMMs-Lab/lmms-eval/blob/main/docs/model_guide.md)
 ```bash
@@ -188,6 +211,27 @@ pip install git+https://github.com/EvolvingLMMs-Lab/lmms-eval.git
 python3 -m accelerate.commands.launch --num_processes=8 -m lmms_eval --model idefics2 --model_args pretrained="HuggingFaceM4/idefics2-8b" --tasks vcr_wiki_en_easy --batch_size 1 --log_samples --log_samples_suffix HuggingFaceM4_idefics2-8b_vcr_wiki_en_easy --output_path ./logs/
 ```
 You may find the supported model list [here](https://github.com/EvolvingLMMs-Lab/lmms-eval/tree/main/lmms_eval/models).
+
+`lmms-eval` supports the following VCR `--tasks` settings:
+
+* English
+  * Easy
+    * `vcr_wiki_en_easy` (full test set, 5000 instances)
+    * `vcr_wiki_en_easy_500` (first 500 instances in the vcr_wiki_en_easy setting)
+    * `vcr_wiki_en_easy_100` (first 100 instances in the vcr_wiki_en_easy setting)
+  * Hard
+    * `vcr_wiki_en_hard` (full test set, 5000 instances)
+    * `vcr_wiki_en_hard_500` (first 500 instances in the vcr_wiki_en_hard setting)
+    * `vcr_wiki_en_hard_100` (first 100 instances in the vcr_wiki_en_hard setting)
+* Chinese
+  * Easy
+    * `vcr_wiki_zh_easy` (full test set, 5000 instances)
+    * `vcr_wiki_zh_easy_500` (first 500 instances in the vcr_wiki_zh_easy setting)
+    * `vcr_wiki_zh_easy_100` (first 100 instances in the vcr_wiki_zh_easy setting)
+  * Hard
+    * `vcr_wiki_zh_hard` (full test set, 5000 instances)
+    * `vcr_wiki_zh_hard_500` (first 500 instances in the vcr_wiki_zh_hard setting)
+    * `vcr_wiki_zh_hard_100` (first 100 instances in the vcr_wiki_zh_hard setting)
 
 # Usage of VCR Transform
 ```python

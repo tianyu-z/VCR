@@ -143,8 +143,9 @@ pip install -r requirements.txt
 # 我们以 Hugging FaceM4/idefics2-8b 模型为例
 cd src/evaluation
 # 评估结果并将评估指标保存为 {model_id}_{difficulty}_{language}_evaluation_result.json
-python3 evaluation_pipeline.py --dataset_handler "vcr-org/VCR-wiki-en-easy-test" --model_id HuggingFaceM4/idefics2-8b --output_path . --bootstrap --end_index 5000
+python3 evaluation_pipeline.py --dataset_handler "vcr-org/VCR-wiki-en-easy-test" --model_id HuggingFaceM4/idefics2-8b --device "cuda" --output_path . --bootstrap --end_index 5000
 ```
+对于像 "OpenGVLab/InternVL2-Llama3-76B" 这样的大型模型，你可能需要使用多个 GPU 来进行评估。你可以将 --device 设置为 None 以使用所有可用的 GPU。
 
 ### 闭源模型评估
 我们提供了闭源模型评估脚本，位于 `src/evaluation/closed_source_eval.py`。
@@ -184,6 +185,28 @@ python run.py --data VCR_EN_EASY_ALL --model idefics2_8b --verbose
 
 您可以在[这里](https://github.com/open-compass/VLMEvalKit/blob/main/vlmeval/config.py)找到支持的模型列表。
 
+`VLMEvalKit` 支持以下 VCR `--data` 设置：
+
+* 英语
+  * 简单
+    * `VCR_EN_EASY_ALL`（完整测试集，5000个实例）
+    * `VCR_EN_EASY_500`（VCR_EN_EASY_ALL设置中的前500个实例）
+    * `VCR_EN_EASY_100`（VCR_EN_EASY_ALL设置中的前100个实例）
+  * 困难
+    * `VCR_EN_HARD_ALL`（完整测试集，5000个实例）
+    * `VCR_EN_HARD_500`（VCR_EN_HARD_ALL设置中的前500个实例）
+    * `VCR_EN_HARD_100`（VCR_EN_HARD_ALL设置中的前100个实例）
+* 中文
+  * 简单
+    * `VCR_ZH_EASY_ALL`（完整测试集，5000个实例）
+    * `VCR_ZH_EASY_500`（VCR_ZH_EASY_ALL设置中的前500个实例）
+    * `VCR_ZH_EASY_100`（VCR_ZH_EASY_ALL设置中的前100个实例）
+  * 困难
+    * `VCR_ZH_HARD_ALL`（完整测试集，5000个实例）
+    * `VCR_ZH_HARD_500`（VCR_ZH_HARD_ALL设置中的前500个实例）
+    * `VCR_ZH_HARD_100`（VCR_ZH_HARD_ALL设置中的前100个实例）
+
+
 ## 方法3：使用 lmms-eval 框架
 
 如果 lmms-eval 框架不支持您的模型的推理方法，您可能需要将其整合进去。详情请参考[这里](https://github.com/EvolvingLMMs-Lab/lmms-eval/blob/main/docs/model_guide.md)。
@@ -196,7 +219,28 @@ python3 -m accelerate.commands.launch --num_processes=8 -m lmms_eval --model ide
 
 您可以在[这里](https://github.com/EvolvingLMMs-Lab/lmms-eval/tree/main/lmms_eval/models)找到支持的模型列表。
 
+`lmms-eval` 支持以下 VCR `--tasks` 设置：
 
+* 英语
+  * 简单
+    * `vcr_wiki_en_easy`（完整测试集，5000个实例）
+    * `vcr_wiki_en_easy_500`（vcr_wiki_en_easy设置中的前500个实例）
+    * `vcr_wiki_en_easy_100`（vcr_wiki_en_easy设置中的前100个实例）
+  * 困难
+    * `vcr_wiki_en_hard`（完整测试集，5000个实例）
+    * `vcr_wiki_en_hard_500`（vcr_wiki_en_hard设置中的前500个实例）
+    * `vcr_wiki_en_hard_100`（vcr_wiki_en_hard设置中的前100个实例）
+* 中文
+  * 简单
+    * `vcr_wiki_zh_easy`（完整测试集，5000个实例）
+    * `vcr_wiki_zh_easy_500`（vcr_wiki_zh_easy设置中的前500个实例）
+    * `vcr_wiki_zh_easy_100`（vcr_wiki_zh_easy设置中的前100个实例）
+  * 困难
+    * `vcr_wiki_zh_hard`（完整测试集，5000个实例）
+    * `vcr_wiki_zh_hard_500`（vcr_wiki_zh_hard设置中的前500个实例）
+    * `vcr_wiki_zh_hard_100`（vcr_wiki_zh_hard设置中的前100个实例）
+
+    
 # VCR Transform 的使用
 ```python
 from vcr_transform import VCRTransform
