@@ -231,13 +231,13 @@ def get_model(model_id, dtype, finetune_peft_path=None):
         tokenizer = LlamaTokenizer.from_pretrained("lmsys/vicuna-7b-v1.5")
         model = (
             AutoModelForCausalLM.from_pretrained(
-                "THUDM/cogvlm-chat-hf",
-                torch_dtype=torch.bfloat16,
+                model_id,
+                device_map="auto",
+                torch_dtype=dtype,
                 low_cpu_mem_usage=True,
                 trust_remote_code=True,
             )
             .eval()
-            .to(device)
         )
 
     elif model_id in ["echo840/Monkey-Chat"]:
