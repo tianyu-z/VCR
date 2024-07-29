@@ -19,11 +19,11 @@
 
 
 # 新闻
-- 🔥🔥🔥 **[2024-06-29]** 我们在《机器之心》微信公众号的投稿[被刊登](https://mp.weixin.qq.com/s/Zy-kM3bvN-1oHondw1VLzw)
+- 🔥🔥🔥 **[2024-06-24]** 我们更新了我们的 arXiv 论文。现在，我们有来自 Claude 3.5 Sonnet、Claude 3 Opus、GPT-4o、GPT-4-Turbo、Qwen-VL-Max、Reka Core 和 Gemini-1.5-pro 的结果。评估脚本也已发布。请检查 `src/evaluation/closed_source_eval.py`。
+- 🔥🔥🔥 **[2024-06-29]** 我们在《机器之心》微信公众号的投稿[被刊登](https://mp.weixin.qq.com/s/Zy-kM3bvN-1oHondw1VLzw)。
 - 🔥🔥🔥 **[2024-06-24]** 我们更新了我们的 arXiv 论文。现在，我们有来自 Claude 3.5 Sonnet、Claude 3 Opus、GPT-4o、GPT-4-Turbo、Qwen-VL-Max、Reka Core 和 Gemini-1.5-pro 的结果。评估脚本也已发布，请查看 `src/evaluation/closed_source_eval.py`。
 - 🔥🔥🔥 **[2024-06-15]** 我们发布了torch框架下的VCR变换，可以为任意图像-文本对生成带有嵌入文本的VCR图像。此变换可作为VLMs中的预训练任务之一。
 - 🔥🔥🔥 **[2024-06-13]** 我们发布了开源模型、闭源模型以及创建数据集流程的评估代码。
-- 🔥🔥🔥 **[2024-06-12]** 我们已将VCR-wiki评估过程整合到[lmms-eval](https://github.com/EvolvingLMMs-Lab/lmms-eval)框架中。现在用户可以使用一行命令运行模型在VCR-wiki测试数据集上的评估。
 - 🔥🔥🔥 **[2024-06-11]** 我们的论文已发布在[arXiv](https://arxiv.org/abs/2406.06462)上，包含了一系列模型的评估结果。
 - 🔥🔥🔥 **[2024-06-10]** 我们已发布[VCR-wiki数据集](https://huggingface.co/vcr-org)，该数据集包含来自维基百科的211万英文和34.6万中文实体，提供了易和难两个版本。数据集在Hugging Face Datasets库中可用。
 
