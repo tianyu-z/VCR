@@ -4,7 +4,6 @@ from gather_results import main as gather_results
 import argparse
 
 
-
 def main(dataset_handler, model_id, device, output_path, bootstrap, end_index):
     if device == "None" or device == "none":
         device = None

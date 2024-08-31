@@ -7,22 +7,20 @@ from PIL import Image
 from PIL.JpegImagePlugin import JpegImageFile
 from torchvision.transforms.functional import InterpolationMode
 from PIL.Image import Image as type_image
-from cambrian.constants import (
-    IMAGE_TOKEN_INDEX,
-    DEFAULT_IMAGE_TOKEN,
-    DEFAULT_IM_START_TOKEN,
-    DEFAULT_IM_END_TOKEN,
-)
-from cambrian.mm_utils import tokenizer_image_token, process_images
-from cambrian.conversation import conv_templates
-
-IMAGENET_MEAN = (0.485, 0.456, 0.406)
-IMAGENET_STD = (0.229, 0.224, 0.225)
 
 
 def cambrian_process(
     image, question, tokenizer, image_processor, model_config, model_name
 ):
+    from cambrian.constants import (
+        IMAGE_TOKEN_INDEX,
+        DEFAULT_IMAGE_TOKEN,
+        DEFAULT_IM_START_TOKEN,
+        DEFAULT_IM_END_TOKEN,
+    )
+    from cambrian.mm_utils import tokenizer_image_token, process_images
+    from cambrian.conversation import conv_templates
+
     if model_name == "cambrian-phi3-3b":
         conv_mode = "phi3"
     elif model_name == "cambrian-8b":
@@ -65,6 +63,8 @@ def cambrian_process(
 
 
 def build_transform(input_size):
+    IMAGENET_MEAN = (0.485, 0.456, 0.406)
+    IMAGENET_STD = (0.229, 0.224, 0.225)
     MEAN, STD = IMAGENET_MEAN, IMAGENET_STD
     transform = T.Compose(
         [

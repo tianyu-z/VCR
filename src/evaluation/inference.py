@@ -162,7 +162,10 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
             )
 
             model = InternLMXComposer2ForCausalLM.from_pretrained(
-                model_id, device_map=device_map, trust_remote_code=True, torch_dtype=dtype
+                model_id,
+                device_map=device_map,
+                trust_remote_code=True,
+                torch_dtype=dtype,
             )
         elif model_id == "internlm/internlm-xcomposer2-4khd-7b":
             from internlm2r4k.modeling_internlm_xcomposer2 import (
@@ -170,7 +173,10 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
             )
 
             model = InternLMXComposer2ForCausalLM.from_pretrained(
-                model_id, device_map=device_map, trust_remote_code=True, torch_dtype=dtype
+                model_id,
+                device_map=device_map,
+                trust_remote_code=True,
+                torch_dtype=dtype,
             )
         elif model_id == "internlm/internlm-xcomposer2d5-7b":
             from internlm2d5.modeling_internlm_xcomposer2 import (
@@ -178,7 +184,10 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
             )
 
             model = InternLMXComposer2ForCausalLM.from_pretrained(
-                model_id, device_map=device_map, torch_dtype=dtype, trust_remote_code=True
+                model_id,
+                device_map=device_map,
+                torch_dtype=dtype,
+                trust_remote_code=True,
             )
 
         tokenizer = AutoTokenizer.from_pretrained(
@@ -220,6 +229,7 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
                 ).eval()
             else:
                 from transformers import AutoModelForCausalLM
+
                 model = AutoModelForCausalLM.from_pretrained(
                     model_id,
                     device_map=device_map,
@@ -235,16 +245,13 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
 
         processor = None
         tokenizer = LlamaTokenizer.from_pretrained("lmsys/vicuna-7b-v1.5")
-        model = (
-            AutoModelForCausalLM.from_pretrained(
-                model_id,
-                device_map=device_map,
-                torch_dtype=dtype,
-                low_cpu_mem_usage=True,
-                trust_remote_code=True,
-            )
-            .eval()
-        )
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            device_map=device_map,
+            torch_dtype=dtype,
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+        ).eval()
 
     elif model_id in ["echo840/Monkey-Chat"]:
         if is_finetune:
@@ -274,6 +281,33 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
         tokenizer, model, processor, _ = load_pretrained_model(
             model_path, None, model_name, device_map=device_map
         )
+    elif model_id in ["Qwen/Qwen2-VL-7B-Instruct"]:
+        from transformers import (
+            Qwen2VLForConditionalGeneration,
+            AutoTokenizer,
+            AutoProcessor,
+        )
+
+        model = Qwen2VLForConditionalGeneration.from_pretrained(
+            model_id, torch_dtype="auto", device_map="auto"
+        )
+        processor = AutoProcessor.from_pretrained(model_id)
+        tokenizer = None
+    elif model_id in ["microsoft/Phi-3.5-vision-instruct"]:
+        from transformers import AutoModelForCausalLM
+        from transformers import AutoProcessor
+
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            device_map=device_map,
+            trust_remote_code=True,
+            torch_dtype=dtype,
+            _attn_implementation="flash_attention_2",
+        )
+        processor = AutoProcessor.from_pretrained(
+            model_id, trust_remote_code=True, num_crops=4
+        )
+        tokenizer = None
     else:
         raise ValueError(f"Unsupported model {model_id}")
     return model, tokenizer, processor
@@ -446,11 +480,17 @@ def inference_single(
             template_version="chat",
         )
         inputs = {
-            "input_ids": input_by_model["input_ids"].unsqueeze(0).to(model.device), 
-            "token_type_ids": input_by_model["token_type_ids"].unsqueeze(0).to(model.device),
-            "attention_mask": input_by_model["attention_mask"].unsqueeze(0).to(model.device),
+            "input_ids": input_by_model["input_ids"].unsqueeze(0).to(model.device),
+            "token_type_ids": input_by_model["token_type_ids"]
+            .unsqueeze(0)
+            .to(model.device),
+            "attention_mask": input_by_model["attention_mask"]
+            .unsqueeze(0)
+            .to(model.device),
             "images": (
-                [[input_by_model["images"][0].to(dtype).to(model.device)]] if image is not None else None
+                [[input_by_model["images"][0].to(dtype).to(model.device)]]
+                if image is not None
+                else None
             ),
         }
         gen_kwargs = {
@@ -468,10 +508,16 @@ def inference_single(
         )  # chat mode
         inputs = {
             "input_ids": input_by_model["input_ids"].unsqueeze(0).to(model.device),
-            "token_type_ids": input_by_model["token_type_ids"].unsqueeze(0).to(model.device),
-            "attention_mask": input_by_model["attention_mask"].unsqueeze(0).to(model.device),
+            "token_type_ids": input_by_model["token_type_ids"]
+            .unsqueeze(0)
+            .to(model.device),
+            "attention_mask": input_by_model["attention_mask"]
+            .unsqueeze(0)
+            .to(model.device),
             "images": (
-                [[input_by_model["images"][0].to(dtype).to(model.device)]] if image is not None else None
+                [[input_by_model["images"][0].to(dtype).to(model.device)]]
+                if image is not None
+                else None
             ),
         }
         gen_kwargs = {"max_length": 2048, "do_sample": False}
@@ -567,6 +613,62 @@ def inference_single(
         res[image_id] = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[
             0
         ].strip()
+    elif model_id in [
+        "Qwen/Qwen2-VL-7B-Instruct",
+    ]:
+        conversation = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image",
+                    },
+                    {"type": "text", "text": question},
+                ],
+            }
+        ]
+        text_prompt = processor.apply_chat_template(
+            conversation, add_generation_prompt=True
+        )
+        inputs = processor(
+            text=[text_prompt], images=[image], padding=True, return_tensors="pt"
+        ).to(model.device)
+        with torch.no_grad():
+            output_ids = model.generate(**inputs, max_new_tokens=max_tokens_len)
+            generated_ids = [
+                output_ids[len(input_ids) :]
+                for input_ids, output_ids in zip(inputs.input_ids, output_ids)
+            ]
+            res[image_id] = processor.batch_decode(
+                generated_ids,
+                skip_special_tokens=True,
+                clean_up_tokenization_spaces=True,
+            )[0]
+    elif model_id in ["microsoft/Phi-3.5-vision-instruct"]:
+        messages = [
+            {"role": "user", "content": "<|image_1|>\n" + question},
+        ]
+        prompt = processor.tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+        inputs = processor(prompt, [image], return_tensors="pt").to(model.device)
+        generation_args = {
+            "max_new_tokens": max_tokens_len,
+            "temperature": 0.0,
+            "do_sample": False,
+        }
+        with torch.no_grad():
+            generate_ids = model.generate(
+                **inputs,
+                eos_token_id=processor.tokenizer.eos_token_id,
+                **generation_args,
+            )
+            generate_ids = generate_ids[:, inputs["input_ids"].shape[1] :]
+            res[image_id] = processor.batch_decode(
+                generate_ids,
+                skip_special_tokens=True,
+                clean_up_tokenization_spaces=False,
+            )[0]
     else:
         raise ValueError(f"Unsupported model {model_id}")
     return res
@@ -710,54 +812,81 @@ def main(
             max_tokens_len = int(len(toke) * 2)
         except:
             max_tokens_len = 200  # default choice, change if needed
-
-        res_stacked_image.update(
-            inference_single(
-                model_id,
-                model,
-                tokenizer,
-                processor,
-                stacked_image,
-                str(image_id),
-                question,
-                dtype,
-                max_tokens_len,
-                device,
+        try:
+            res_stacked_image.update(
+                inference_single(
+                    model_id,
+                    model,
+                    tokenizer,
+                    processor,
+                    stacked_image,
+                    str(image_id),
+                    question,
+                    dtype,
+                    max_tokens_len,
+                    device,
+                )
             )
-        )
-        res_only_it_image.update(
-            inference_single(
-                model_id,
-                model,
-                tokenizer,
-                processor,
-                only_it_image,
-                str(image_id),
-                question,
-                dtype,
-                max_tokens_len,
-                device,
+            res_stacked_image_success = True
+        except Exception as e:
+            print(f"Failed at image_id, res_stacked_image: {image_id}")
+            failed_image_ids.append(image_id)
+            print(e)
+            res_stacked_image_success = False
+        try:
+            res_only_it_image.update(
+                inference_single(
+                    model_id,
+                    model,
+                    tokenizer,
+                    processor,
+                    only_it_image,
+                    str(image_id),
+                    question,
+                    dtype,
+                    max_tokens_len,
+                    device,
+                )
             )
-        )
-        res_only_it_image_small.update(
-            inference_single(
-                model_id,
-                model,
-                tokenizer,
-                processor,
-                only_it_image_small,
-                str(image_id),
-                question,
-                dtype,
-                max_tokens_len,
-                device,
+            res_only_it_image_success = True
+        except Exception as e:
+            print(f"Failed at image_id, res_only_it_image: {image_id}")
+            failed_image_ids.append(image_id)
+            print(e)
+            res_only_it_image_success = False
+        try:
+            res_only_it_image_small.update(
+                inference_single(
+                    model_id,
+                    model,
+                    tokenizer,
+                    processor,
+                    only_it_image_small,
+                    str(image_id),
+                    question,
+                    dtype,
+                    max_tokens_len,
+                    device,
+                )
             )
-        )
-
+            res_only_it_image_small_success = True
+        except Exception as e:
+            print(f"Failed at image_id, res_only_it_image_small: {image_id}")
+            failed_image_ids.append(image_id)
+            print(e)
+            res_only_it_image_small_success = False
         merged_dict[str(image_id)] = {
-            "res_stacked_image": res_stacked_image[str(image_id)],
-            "res_only_it_image": res_only_it_image[str(image_id)],
-            "res_only_it_image_small": res_only_it_image_small[str(image_id)],
+            "res_stacked_image": (
+                res_stacked_image[str(image_id)] if res_stacked_image_success else ""
+            ),
+            "res_only_it_image": (
+                res_only_it_image[str(image_id)] if res_only_it_image_success else ""
+            ),
+            "res_only_it_image_small": (
+                res_only_it_image_small[str(image_id)]
+                if res_only_it_image_small_success
+                else ""
+            ),
         }
 
         if (image_id + 1) % save_interval == 0:
