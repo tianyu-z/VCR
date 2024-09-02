@@ -103,6 +103,19 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
         )
         model.eval()
         processor = None
+    elif model_id in ["openbmb/MiniCPM-V-2_6"]:
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+
+        model = AutoModel.from_pretrained(
+            model_id,
+            device_map=device_map,
+            trust_remote_code=True,
+            attn_implementation="sdpa",
+            torch_dtype=dtype,
+        )  # sdpa or flash_attention_2, no eager
+        model = model.eval()
+        tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
+        processor = None
     elif model_id in [
         "OpenGVLab/InternVL2-26B",
         "OpenGVLab/InternVL2-40B",
@@ -407,6 +420,15 @@ def inference_single(
                 temperature=0.7,
                 max_new_tokens=max_tokens_len,
             )
+    elif model_id == "openbmb/MiniCPM-V-2_6":
+        msgs = [{"role": "user", "content": [image, question]}]
+        res[image_id] = model.chat(
+            image=None,
+            msgs=msgs,
+            tokenizer=tokenizer,
+            sampling=False,
+            max_new_tokens=max_tokens_len,
+        )
     elif model_id in [
         "OpenGVLab/InternVL-Chat-V1-5",
         "OpenGVLab/InternVL2-26B",
@@ -717,7 +739,7 @@ def inference_single_pipeline(
 
 def main(
     dataset_handler="vcr-org/VCR-wiki-en-hard-test",
-    model_id="internlm/internlm-xcomposer2d5-7b",
+    model_id="Qwen/Qwen2-VL-7B-Instruct",
     device="cuda",
     dtype="bf16",
     save_interval=5,  # Save progress every 100 images
