@@ -76,44 +76,44 @@ VCR-wiki comprises **2.11M** English and **346K** Chinese entities sourced from 
 
 # Benchmark
 EM means `"Exact Match"` and Jaccard means `"Jaccard Similarity"`. The best in closed source and open source are highlighted in **bold**. The second best are highlighted in *italic*. Closed source models are evaluated based on [500 test samples](https://huggingface.co/collections/vcr-org/vcr-visual-caption-restoration-500-test-subsets-6667c9efd77c55f2363b34a1), while open source models are evaluated based on [5000 test samples](https://huggingface.co/collections/vcr-org/vcr-visual-caption-restoration-6661393b1761e2aff7b967b9).
-| Model | Size (unknown for closed source) | En Easy EM | En Easy Jaccard | En Hard EM | En Hard Jaccard | Zh Easy EM | Zh Easy Jaccard | Zh Hard EM | Zh Hard Jaccard |
-|---|---|---|---|---|---|---|---|---|---|
-| Claude 3 Opus | - | 62.0 | 77.67 | 37.8 | 57.68 | 0.9 | 11.5 | 0.3 | 9.22 |
-| Claude 3.5 Sonnet | - | 63.85 | 74.65 | 41.74 | 56.15 | 1.0 | 7.54 | 0.2 | 4.0 |
-| GPT-4 Turbo | - | *78.74* | *88.54* | *45.15* | *65.72* | 0.2 | 8.42 | 0.0 | *8.58* |
-| GPT-4V | - | 52.04 | 65.36 | 25.83 | 44.63 | - | - | - | - |
-| GPT-4o | - | **91.55** | **96.44** | **73.2** | **86.17** | **14.87** | **39.05** | **2.2** | **22.72** |
-| GPT-4o-mini | - | 83.60 | 87.77 | 54.04 | 73.09 | 1.10 | 5.03 | 0 | 2.02 |
-| Gemini 1.5 Pro | - | 62.73 | 77.71 | 28.07 | 51.9 | 1.1 | 11.1 | 0.7 | 11.82 |
-| Qwen-VL-Max | - | 76.8 | 85.71 | 41.65 | 61.18 | *6.34* | *13.45* | *0.89* | 5.4 |
-| Reka Core | - | 66.46 | 84.23 | 6.71 | 25.84 | 0.0 | 3.43 | 0.0 | 3.35 |
-| Cambrian-1 | 34B | 79.69 | 89.27 | 27.20 | 50.04 | 0.03 | 1.27 | 0.00 | 1.37 |
-| Cambrian-1 | 13B | 49.35 | 65.11 | 8.37 | 29.12 | - | - | - | - |
-| Cambrian-1 | 8B | 71.13 | 83.68 | 13.78 | 35.78 | - | - | - | - |
-| CogVLM | 17B | 73.88 | 86.24 | 34.58 | 57.17 | - | - | - | - |
-| CogVLM2 | 19B | 83.25 | 89.75 | *37.98* | *59.99* | 9.15 | 17.12 | 0.08 | 3.67 |
-| CogVLM2-Chinese | 19B | 79.90 | 87.42 | 25.13 | 48.76 | *33.24* | *57.57* | *1.34* | *17.35* |
-| DeepSeek-VL | 1.3B | 23.04 | 46.84 | 0.16 | 11.89 | 0.0 | 6.56 | 0.0 | 6.46 |
-| DeepSeek-VL | 7B | 38.01 | 60.02 | 1.0 | 15.9 | 0.0 | 4.08 | 0.0 | 5.11 |
-| DocOwl-1.5-Omni | 8B | 0.84 | 13.34 | 0.04 | 7.76 | 0.0 | 1.14 | 0.0 | 1.37 |
-| GLM-4v | 9B | 43.72 | 74.73 | 24.83 | 53.82 | 31.78 | 52.57 | 1.20 | 14.73 |
-| Idefics2 | 8B | 15.75 | 31.97 | 0.65 | 9.93 | - | - | - | - |
-| InternLM-XComposer2-VL | 7B | 46.64 | 70.99 | 0.7 | 12.51 | 0.27 | 12.32 | 0.07 | 8.97 |
-| InternLM-XComposer2-VL-4KHD | 7B | 5.32 | 22.14 | 0.21 | 9.52 | 0.46 | 12.31 | 0.05 | 7.67 |
-| InternLM-XComposer2.5-VL | 7B | 41.35 | 63.04 | 0.93 | 13.82 | 0.46 | 12.97 | 0.11 | 10.95 |
-| InternVL-V1.5 | 26B | 14.65 | 51.42 | 1.99 | 16.73 | 4.78 | 26.43 | 0.03 | 8.46 |
-| InternVL-V2 | 26B | 74.51 | 86.74 | 6.18 | 24.52 | 9.02 | 32.50 | 0.05 | 9.49 |
-| InternVL-V2 | 40B | *84.67* | *92.64* | 13.10 | 33.64 | 22.09 | 47.62 | 0.48 | 12.57 |
-| InternVL-V2 | 76B | 83.20 | 91.26 | 18.45 | 41.16 | 20.58 | 44.59 | 0.56 | 15.31 |
-| InternVL-V2-Pro | - | 77.41 | 86.59 | 12.94 | 35.01 | 19.58 | 43.98 | 0.84 | 13.97 |
-| MiniCPM-V2.5 | 8B | 31.81 | 53.24 | 1.41 | 11.94 | 4.1 | 18.03 | 0.09 | 7.39 |
-| MiniCPM-V2.6 | 8B | 73.88 | 85.71 | 4.72 | 19.76 | 10.18 | 23.61 | 0.26 | 7.51 |
-| Monkey | 7B | 50.66 | 67.6 | 1.96 | 14.02 | 0.62 | 8.34 | 0.12 | 6.36 |
-| Phi-3.5-V | 7B | 39.27 | 60.40 | 0.90 | 15.00 | - | - | - | - |
-| Qwen-VL | 7B | 49.71 | 69.94 | 2.0 | 15.04 | 0.04 | 1.5 | 0.01 | 1.17 |
-| Qwen2-VL | 7B | **89.70** | **93.84** | **74.32** | **85.47** | **59.94** | **76.95** | **18.33** | **43.55** |
-| Yi-VL | 34B | 0.82 | 5.59 | 0.07 | 4.31 | 0.0 | 4.44 | 0.0 | 4.12 |
-| Yi-VL | 6B | 0.75 | 5.54 | 0.06 | 4.46 | 0.00 | 4.37 | 0.00 | 4.0 |
+| Model | Size (unknown for closed source) | Released date (MMDDYY) | En Easy EM | En Easy Jaccard | En Hard EM | En Hard Jaccard | Zh Easy EM | Zh Easy Jaccard | Zh Hard EM | Zh Hard Jaccard |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Claude 3 Opus | - | 030424 | 62.0 | 77.67 | 37.8 | 57.68 | 0.9 | 11.5 | 0.3 | 9.22 |
+| Claude 3.5 Sonnet | - | 062024 | 63.85 | 74.65 | 41.74 | 56.15 | 1.0 | 7.54 | 0.2 | 4.0 |
+| GPT-4 Turbo | - | 040924 | *78.74* | *88.54* | *45.15* | *65.72* | 0.2 | 8.42 | 0.0 | *8.58* |
+| GPT-4V | - | 012524 | 52.04 | 65.36 | 25.83 | 44.63 | - | - | - | - |
+| GPT-4o | - | 051324 | **91.55** | **96.44** | **73.2** | **86.17** | **14.87** | **39.05** | **2.2** | **22.72** |
+| GPT-4o-mini | - | 071824 | 83.60 | 87.77 | 54.04 | 73.09 | 1.10 | 5.03 | 0 | 2.02 |
+| Gemini 1.5 Pro | - | 051524 | 62.73 | 77.71 | 28.07 | 51.9 | 1.1 | 11.1 | 0.7 | 11.82 |
+| Qwen-VL-Max | - | 082223 | 76.8 | 85.71 | 41.65 | 61.18 | *6.34* | *13.45* | *0.89* | 5.4 |
+| Reka Core | - | 041624 | 66.46 | 84.23 | 6.71 | 25.84 | 0.0 | 3.43 | 0.0 | 3.35 |
+| Cambrian-1 | 34B | 062524 | 79.69 | 89.27 | 27.20 | 50.04 | 0.03 | 1.27 | 0.00 | 1.37 |
+| Cambrian-1 | 13B | 062524 | 49.35 | 65.11 | 8.37 | 29.12 | - | - | - | - |
+| Cambrian-1 | 8B | 062524 | 71.13 | 83.68 | 13.78 | 35.78 | - | - | - | - |
+| CogVLM | 17B | 092823 | 73.88 | 86.24 | 34.58 | 57.17 | - | - | - | - |
+| CogVLM2 | 19B | 051324 | 83.25 | 89.75 | *37.98* | *59.99* | 9.15 | 17.12 | 0.08 | 3.67 |
+| CogVLM2-Chinese | 19B | 051324 | 79.90 | 87.42 | 25.13 | 48.76 | *33.24* | *57.57* | *1.34* | *17.35* |
+| DeepSeek-VL | 1.3B | 051324 | 23.04 | 46.84 | 0.16 | 11.89 | 0.0 | 6.56 | 0.0 | 6.46 |
+| DeepSeek-VL | 7B | 051324 | 38.01 | 60.02 | 1.0 | 15.9 | 0.0 | 4.08 | 0.0 | 5.11 |
+| DocOwl-1.5-Omni | 8B | 053124 | 0.84 | 13.34 | 0.04 | 7.76 | 0.0 | 1.14 | 0.0 | 1.37 |
+| GLM-4v | 9B | 060424 | 43.72 | 74.73 | 24.83 | 53.82 | 31.78 | 52.57 | 1.20 | 14.73 |
+| Idefics2 | 8B | 041524 | 15.75 | 31.97 | 0.65 | 9.93 | - | - | - | - |
+| InternLM-XComposer2-VL | 7B | 012524 | 46.64 | 70.99 | 0.7 | 12.51 | 0.27 | 12.32 | 0.07 | 8.97 |
+| InternLM-XComposer2-VL-4KHD | 7B | 040924 | 5.32 | 22.14 | 0.21 | 9.52 | 0.46 | 12.31 | 0.05 | 7.67 |
+| InternLM-XComposer2.5-VL | 7B | 051924 | 41.35 | 63.04 | 0.93 | 13.82 | 0.46 | 12.97 | 0.11 | 10.95 |
+| InternVL-V1.5 | 26B | 041824 | 14.65 | 51.42 | 1.99 | 16.73 | 4.78 | 26.43 | 0.03 | 8.46 |
+| InternVL-V2 | 26B | 070324 | 74.51 | 86.74 | 6.18 | 24.52 | 9.02 | 32.50 | 0.05 | 9.49 |
+| InternVL-V2 | 40B | 070824 | *84.67* | *92.64* | 13.10 | 33.64 | 22.09 | 47.62 | 0.48 | 12.57 |
+| InternVL-V2 | 76B | 071524 | 83.20 | 91.26 | 18.45 | 41.16 | 20.58 | 44.59 | 0.56 | 15.31 |
+| InternVL-V2-Pro | - | - | 77.41 | 86.59 | 12.94 | 35.01 | 19.58 | 43.98 | 0.84 | 13.97 |
+| MiniCPM-V2.5 | 8B | 051924 | 31.81 | 53.24 | 1.41 | 11.94 | 4.1 | 18.03 | 0.09 | 7.39 |
+| MiniCPM-V2.6 | 8B | 080424 | 73.88 | 85.71 | 4.72 | 19.76 | 10.18 | 23.61 | 0.26 | 7.51 |
+| Monkey | 7B | 112223 | 50.66 | 67.6 | 1.96 | 14.02 | 0.62 | 8.34 | 0.12 | 6.36 |
+| Phi-3.5-V | 7B | 082124 | 39.27 | 60.40 | 0.90 | 15.00 | - | - | - | - |
+| Qwen-VL | 7B | 082023 | 49.71 | 69.94 | 2.0 | 15.04 | 0.04 | 1.5 | 0.01 | 1.17 |
+| Qwen2-VL | 7B | 082824 | **89.70** | **93.84** | **74.32** | **85.47** | **59.94** | **76.95** | **18.33** | **43.55** |
+| Yi-VL | 34B | 011824 | 0.82 | 5.59 | 0.07 | 4.31 | 0.0 | 4.44 | 0.0 | 4.12 |
+| Yi-VL | 6B | 011724 | 0.75 | 5.54 | 0.06 | 4.46 | 0.00 | 4.37 | 0.00 | 4.0 |
 
 # Model Evaluation
 
@@ -122,12 +122,15 @@ EM means `"Exact Match"` and Jaccard means `"Jaccard Similarity"`. The best in c
 We support open-source model_id: 
 ```python
 ["openbmb/MiniCPM-Llama3-V-2_5",
+"openbmb/MiniCPM-V-2_6",
 "OpenGVLab/InternVL-Chat-V1-5",
 "internlm/internlm-xcomposer2-vl-7b",
 "internlm/internlm-xcomposer2-4khd-7b",
 "internlm/internlm-xcomposer2d5-7b",
 "HuggingFaceM4/idefics2-8b",
 "Qwen/Qwen-VL-Chat",
+"Qwen/Qwen2-VL-2B-Instruct",
+"Qwen/Qwen2-VL-7B-Instruct",
 "THUDM/cogvlm2-llama3-chinese-chat-19B",
 "THUDM/cogvlm2-llama3-chat-19B",
 "THUDM/cogvlm-chat-hf",
@@ -137,9 +140,15 @@ We support open-source model_id:
 "nyu-visionx/cambrian-8b",
 "nyu-visionx/cambrian-13b",
 "nyu-visionx/cambrian-34b",
+"microsoft/Phi-3.5-vision-instruct",
+"OpenGVLab/InternVL2-1B",
+"OpenGVLab/InternVL2-2B",
+"OpenGVLab/InternVL2-4B",
+"OpenGVLab/InternVL2-8B",
 "OpenGVLab/InternVL2-26B",
 "OpenGVLab/InternVL2-40B"
-"OpenGVLab/InternVL2-Llama3-76B",]
+"OpenGVLab/InternVL2-Llama3-76B",
+]
 ```
 For the models not on list, they are not intergated with huggingface, please refer to their github repo to create the evaluation pipeline. Examples of the inference logic are in `src/evaluation/inference.py`
 

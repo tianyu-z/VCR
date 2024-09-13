@@ -117,6 +117,10 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
         tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
         processor = None
     elif model_id in [
+        "OpenGVLab/InternVL2-1B",
+        "OpenGVLab/InternVL2-2B",
+        "OpenGVLab/InternVL2-4B",
+        "OpenGVLab/InternVL2-8B",
         "OpenGVLab/InternVL2-26B",
         "OpenGVLab/InternVL2-40B",
         "OpenGVLab/InternVL2-Llama3-76B",
@@ -126,6 +130,9 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
             device_map = {}
             world_size = torch.cuda.device_count()
             num_layers = {
+                "InternVL2-1B": 24,
+                "InternVL2-2B": 24,
+                "InternVL2-4B": 32,
                 "InternVL2-8B": 32,
                 "InternVL2-26B": 48,
                 "InternVL2-40B": 60,
@@ -154,6 +161,8 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
         device_map = split_model(model_id.split("/")[-1])
         if is_finetune:
             raise ValueError(f"Fine-tuning is not supported for {model_id}")
+        from transformers import AutoModel, AutoTokenizer
+
         model = AutoModel.from_pretrained(
             model_id, device_map=device_map, trust_remote_code=True, torch_dtype=dtype
         )
@@ -294,7 +303,7 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
         tokenizer, model, processor, _ = load_pretrained_model(
             model_path, None, model_name, device_map=device_map
         )
-    elif model_id in ["Qwen/Qwen2-VL-7B-Instruct"]:
+    elif model_id in ["Qwen/Qwen2-VL-7B-Instruct", "Qwen/Qwen2-VL-2B-Instruct"]:
         from transformers import (
             Qwen2VLForConditionalGeneration,
             AutoTokenizer,
@@ -431,6 +440,9 @@ def inference_single(
         )
     elif model_id in [
         "OpenGVLab/InternVL-Chat-V1-5",
+        "OpenGVLab/InternVL2-1B",
+        "OpenGVLab/InternVL2-2B",
+        "OpenGVLab/InternVL2-8B",
         "OpenGVLab/InternVL2-26B",
         "OpenGVLab/InternVL2-40B",
         "OpenGVLab/InternVL2-Llama3-76B",
@@ -635,9 +647,7 @@ def inference_single(
         res[image_id] = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[
             0
         ].strip()
-    elif model_id in [
-        "Qwen/Qwen2-VL-7B-Instruct",
-    ]:
+    elif model_id in ["Qwen/Qwen2-VL-7B-Instruct", "Qwen/Qwen2-VL-2B-Instruct"]:
         conversation = [
             {
                 "role": "user",
@@ -697,7 +707,7 @@ def inference_single(
 
 
 def inference_single_pipeline(
-    model_id="echo840/Monkey-Chat",
+    model_id="microsoft/Phi-3.5-vision-instruct",
     image_paths=["main_pic_output.png_stacked_image.jpg"],
     language="en",
     dtype=torch.bfloat16,
