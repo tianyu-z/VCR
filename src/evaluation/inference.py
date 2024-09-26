@@ -330,6 +330,19 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
             model_id, trust_remote_code=True, num_crops=4
         )
         tokenizer = None
+    elif model_id in [
+        "meta-llama/Llama-3.2-11B-Vision-Instruct",
+        "meta-llama/Llama-3.2-90B-Vision-Instruct",
+    ]:
+        from transformers import MllamaForConditionalGeneration, AutoProcessor
+
+        model = MllamaForConditionalGeneration.from_pretrained(
+            model_id,
+            torch_dtype=dtype,
+            device_map=device_map,
+        )
+        processor = AutoProcessor.from_pretrained(model_id)
+        tokenizer = None
     else:
         raise ValueError(f"Unsupported model {model_id}")
     return model, tokenizer, processor
@@ -442,6 +455,7 @@ def inference_single(
         "OpenGVLab/InternVL-Chat-V1-5",
         "OpenGVLab/InternVL2-1B",
         "OpenGVLab/InternVL2-2B",
+        "OpenGVLab/InternVL2-4B",
         "OpenGVLab/InternVL2-8B",
         "OpenGVLab/InternVL2-26B",
         "OpenGVLab/InternVL2-40B",
@@ -701,6 +715,20 @@ def inference_single(
                 skip_special_tokens=True,
                 clean_up_tokenization_spaces=False,
             )[0]
+    elif model_id in [
+        "meta-llama/Llama-3.2-11B-Vision-Instruct",
+        "meta-llama/Llama-3.2-90B-Vision-Instruct",
+    ]:
+        messages = [
+            {
+                "role": "user",
+                "content": [{"type": "image"}, {"type": "text", "text": question}],
+            }
+        ]
+        input_text = processor.apply_chat_template(messages, add_generation_prompt=True)
+        inputs = processor(image, input_text, return_tensors="pt").to(model.device)
+        output = model.generate(**inputs, max_new_tokens=max_tokens_len)
+        res[image_id] = processor.decode(output[0])
     else:
         raise ValueError(f"Unsupported model {model_id}")
     return res
@@ -749,7 +777,7 @@ def inference_single_pipeline(
 
 def main(
     dataset_handler="vcr-org/VCR-wiki-en-hard-test",
-    model_id="Qwen/Qwen2-VL-7B-Instruct",
+    model_id="nyu-visionx/cambrian-8b",
     device="cuda",
     dtype="bf16",
     save_interval=5,  # Save progress every 100 images
