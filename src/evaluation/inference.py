@@ -13,6 +13,16 @@ from transformers import AutoModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers import AutoProcessor, AutoModelForVision2Seq
 from utils import load_image as load_image_ext
+import base64
+import io
+
+try:
+    from vllm import LLM
+    from vllm.sampling_params import SamplingParams
+
+    hasvllm = True
+except ImportError:
+    hasvllm = False
 
 
 def cover_substrings(sentence, substrings, language="en"):
@@ -343,6 +353,12 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
         )
         processor = AutoProcessor.from_pretrained(model_id)
         tokenizer = None
+    elif model_id in ["mistralai/Pixtral-12B-2409"]:
+        from vllm import LLM
+
+        model = LLM(model=model_id, tokenizer_mode="mistral")
+        processor = None
+        tokenizer = None
     else:
         raise ValueError(f"Unsupported model {model_id}")
     return model, tokenizer, processor
@@ -418,8 +434,12 @@ def inference_single(
     Returns:
     dict: The inference results only with the single image.
     """
-    if device is not None:
-        model = model.to(device)
+    if hasvllm:
+        if device is not None and not isinstance(model, LLM):
+            model = model.to(device)
+    else:
+        if device is not None:
+            model = model.to(device)
     res = {}
     if max_tokens_len is None:
         max_tokens_len = 150
@@ -729,6 +749,27 @@ def inference_single(
         inputs = processor(image, input_text, return_tensors="pt").to(model.device)
         output = model.generate(**inputs, max_new_tokens=max_tokens_len)
         res[image_id] = processor.decode(output[0])
+    elif model_id in ["mistralai/Pixtral-12B-2409"]:
+
+        sampling_params = SamplingParams(max_tokens=max_tokens_len)
+        buffered = io.BytesIO()
+        image.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode()
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": question},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/png;base64,{img_str}"},
+                    },
+                ],
+            },
+        ]
+        res[image_id] = (
+            model.chat(messages, sampling_params=sampling_params)[0].outputs[0].text
+        )
     else:
         raise ValueError(f"Unsupported model {model_id}")
     return res
@@ -777,7 +818,7 @@ def inference_single_pipeline(
 
 def main(
     dataset_handler="vcr-org/VCR-wiki-en-hard-test",
-    model_id="nyu-visionx/cambrian-8b",
+    model_id="mistralai/Pixtral-12B-2409",
     device="cuda",
     dtype="bf16",
     save_interval=5,  # Save progress every 100 images
@@ -872,27 +913,42 @@ def main(
             max_tokens_len = int(len(toke) * 2)
         except:
             max_tokens_len = 200  # default choice, change if needed
-        try:
-            res_stacked_image.update(
-                inference_single(
-                    model_id,
-                    model,
-                    tokenizer,
-                    processor,
-                    stacked_image,
-                    str(image_id),
-                    question,
-                    dtype,
-                    max_tokens_len,
-                    device,
-                )
+            # try:
+            #     res_stacked_image.update(
+            #         inference_single(
+            #             model_id,
+            #             model,
+            #             tokenizer,
+            #             processor,
+            #             stacked_image,
+            #             str(image_id),
+            #             question,
+            #             dtype,
+            #             max_tokens_len,
+            #             device,
+            #         )
+            #     )
+            #     res_stacked_image_success = True
+            # except Exception as e:
+            #     print(f"Failed at image_id, res_stacked_image: {image_id}")
+            #     failed_image_ids.append(image_id)
+            #     print(e)
+            #     res_stacked_image_success = False
+        res_stacked_image.update(
+            inference_single(
+                model_id,
+                model,
+                tokenizer,
+                processor,
+                stacked_image,
+                str(image_id),
+                question,
+                dtype,
+                max_tokens_len,
+                device,
             )
-            res_stacked_image_success = True
-        except Exception as e:
-            print(f"Failed at image_id, res_stacked_image: {image_id}")
-            failed_image_ids.append(image_id)
-            print(e)
-            res_stacked_image_success = False
+        )
+        res_stacked_image_success = True
         try:
             res_only_it_image.update(
                 inference_single(

@@ -148,6 +148,9 @@ We support open-source model_id:
 "OpenGVLab/InternVL2-26B",
 "OpenGVLab/InternVL2-40B"
 "OpenGVLab/InternVL2-Llama3-76B",
+"mistralai/Pixtral-12B-2409",
+"meta-llama/Llama-3.2-11B-Vision-Instruct",
+"meta-llama/Llama-3.2-90B-Vision-Instruct"
 ]
 ```
 For the models not on list, they are not intergated with huggingface, please refer to their github repo to create the evaluation pipeline. Examples of the inference logic are in `src/evaluation/inference.py`

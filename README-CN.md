@@ -140,7 +140,11 @@ EM 表示 "完全匹配"，Jaccard 表示 "Jaccard 相似度"。封闭源代码�
 "OpenGVLab/InternVL2-8B",
 "OpenGVLab/InternVL2-26B",
 "OpenGVLab/InternVL2-40B"
-"OpenGVLab/InternVL2-Llama3-76B",]
+"OpenGVLab/InternVL2-Llama3-76B",
+"mistralai/Pixtral-12B-2409",
+"meta-llama/Llama-3.2-11B-Vision-Instruct",
+"meta-llama/Llama-3.2-90B-Vision-Instruct"
+]
 ```
 对于未在列表中的模型，它们未与huggingface集成，请参考它们的github仓库创建评估流程。
 
