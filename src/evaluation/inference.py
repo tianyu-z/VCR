@@ -817,7 +817,7 @@ def inference_single_pipeline(
 
 
 def main(
-    dataset_handler="vcr-org/VCR-wiki-en-hard-test",
+    dataset_handler="vcr-org/VCR-wiki-zh-hard-test",
     model_id="mistralai/Pixtral-12B-2409",
     device="cuda",
     dtype="bf16",
@@ -913,42 +913,27 @@ def main(
             max_tokens_len = int(len(toke) * 2)
         except:
             max_tokens_len = 200  # default choice, change if needed
-            # try:
-            #     res_stacked_image.update(
-            #         inference_single(
-            #             model_id,
-            #             model,
-            #             tokenizer,
-            #             processor,
-            #             stacked_image,
-            #             str(image_id),
-            #             question,
-            #             dtype,
-            #             max_tokens_len,
-            #             device,
-            #         )
-            #     )
-            #     res_stacked_image_success = True
-            # except Exception as e:
-            #     print(f"Failed at image_id, res_stacked_image: {image_id}")
-            #     failed_image_ids.append(image_id)
-            #     print(e)
-            #     res_stacked_image_success = False
-        res_stacked_image.update(
-            inference_single(
-                model_id,
-                model,
-                tokenizer,
-                processor,
-                stacked_image,
-                str(image_id),
-                question,
-                dtype,
-                max_tokens_len,
-                device,
-            )
-        )
-        res_stacked_image_success = True
+            try:
+                res_stacked_image.update(
+                    inference_single(
+                        model_id,
+                        model,
+                        tokenizer,
+                        processor,
+                        stacked_image,
+                        str(image_id),
+                        question,
+                        dtype,
+                        max_tokens_len,
+                        device,
+                    )
+                )
+                res_stacked_image_success = True
+            except Exception as e:
+                print(f"Failed at image_id, res_stacked_image: {image_id}")
+                failed_image_ids.append(image_id)
+                print(e)
+                res_stacked_image_success = False
         try:
             res_only_it_image.update(
                 inference_single(
