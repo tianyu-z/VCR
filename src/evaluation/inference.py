@@ -13,6 +13,7 @@ from transformers import AutoModel
 from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
 from transformers import AutoProcessor, AutoModelForVision2Seq
 from utils import load_image as load_image_ext
+from peft import AutoPeftModelForCausalLM
 import base64
 import io
 
@@ -320,9 +321,23 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
             AutoProcessor,
         )
 
-        model = Qwen2VLForConditionalGeneration.from_pretrained(
-            model_id, torch_dtype="auto", device_map="auto"
-        )
+        if is_finetune:
+            model = AutoPeftModelForCausalLMWithResizedWTE.from_pretrained(
+                finetune_peft_path,
+                device_map=device_map,
+                trust_remote_code=True,
+                torch_dtype=dtype,
+            ).eval()
+            # model = AutoPeftModelForCausalLM.from_pretrained(
+            #     finetune_peft_path,
+            #     device_map=device_map,
+            #     trust_remote_code=True,
+            #     torch_dtype=dtype,
+            # ).eval()
+        else:
+            model = Qwen2VLForConditionalGeneration.from_pretrained(
+                model_id, torch_dtype="auto", device_map="auto"
+            )
         processor = AutoProcessor.from_pretrained(model_id)
         tokenizer = None
     elif model_id in ["microsoft/Phi-3.5-vision-instruct"]:
@@ -881,13 +896,13 @@ def inference_single_pipeline(
 
 
 def main(
-    dataset_handler="vcr-org/VCR-wiki-zh-hard-test",
-    model_id="allenai/Molmo-7B-O-0924",
+    dataset_handler="vcr-org/VCR-wiki-en-easy-test",
+    model_id="Qwen/Qwen2-VL-2B-Instruct",
     device="cuda",
     dtype="bf16",
     save_interval=5,  # Save progress every 100 images
     resume=True,  # Whether to resume from the last saved state
-    finetune_peft_path=None,
+    finetune_peft_path="/network/scratch/t/tianyu.zhang/official/VQA_Benchmark_cover_char/qwen2vl_2B_en_easy/final_model",
     end_index=5000,
 ):
     """

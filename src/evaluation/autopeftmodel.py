@@ -5,7 +5,7 @@ from typing import Optional
 from peft import AutoPeftModelForCausalLM, PeftConfig, MODEL_TYPE_TO_PEFT_MODEL_MAPPING
 from peft.utils.constants import TOKENIZER_CONFIG_NAME
 from peft.utils.other import check_file_exists_on_hf_hub
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, Qwen2VLForConditionalGeneration
 
 
 class AutoPeftModelForCausalLMWithResizedWTE(AutoPeftModelForCausalLM):
@@ -30,7 +30,12 @@ class AutoPeftModelForCausalLMWithResizedWTE(AutoPeftModelForCausalLM):
 
         task_type = getattr(peft_config, "task_type", None)
 
-        if cls._target_class is not None:
+        if (
+            task_type == "QWEN_CONDITIONAL_GENERATION"
+            or "Qwen2-VL" in peft_config.base_model_name_or_path
+        ):
+            target_class = Qwen2VLForConditionalGeneration
+        elif cls._target_class is not None:
             target_class = cls._target_class
         elif cls._target_class is None and task_type is not None:
             # this is only in the case where we use `AutoPeftModel`
@@ -39,12 +44,18 @@ class AutoPeftModelForCausalLMWithResizedWTE(AutoPeftModelForCausalLM):
             )
 
         if task_type is not None:
-            expected_target_class = MODEL_TYPE_TO_PEFT_MODEL_MAPPING[task_type]
-            if cls._target_peft_class.__name__ != expected_target_class.__name__:
-                raise ValueError(
-                    f"Expected target PEFT class: {expected_target_class.__name__}, but you have asked for: {cls._target_peft_class.__name__}"
-                    " make sure that you are loading the correct model for your task type."
-                )
+            if (
+                task_type == "QWEN_CONDITIONAL_GENERATION"
+                or "Qwen2-VL" in peft_config.base_model_name_or_path
+            ):
+                expected_target_class = Qwen2VLForConditionalGeneration
+            else:
+                expected_target_class = MODEL_TYPE_TO_PEFT_MODEL_MAPPING[task_type]
+                if cls._target_peft_class.__name__ != expected_target_class.__name__:
+                    raise ValueError(
+                        f"Expected target PEFT class: {expected_target_class.__name__}, but you have asked for: {cls._target_peft_class.__name__}"
+                        " make sure that you are loading the correct model for your task type."
+                    )
         elif (
             task_type is None and getattr(peft_config, "auto_mapping", None) is not None
         ):
