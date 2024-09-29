@@ -10,7 +10,7 @@ from datasets import load_dataset
 from fire import Fire
 from tqdm import tqdm
 from transformers import AutoModel
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
 from transformers import AutoProcessor, AutoModelForVision2Seq
 from utils import load_image as load_image_ext
 import base64
@@ -358,6 +358,48 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
 
         model = LLM(model=model_id, tokenizer_mode="mistral")
         processor = None
+        tokenizer = None
+    elif model_id in [
+        "allenai/Molmo-7B-O-0924",
+        "allenai/Molmo-7B-D-0924",
+        "allenai/Molmo-72B-0924",
+        "allenai/MolmoE-1B-0924",
+    ]:
+        from transformers import AutoModelForCausalLM, AutoProcessor
+
+        if model_id == "allenai/Molmo-7B-O-0924":
+            from Molmo_7B_O_0924.modeling_molmo import MolmoForCausalLM
+
+            model = MolmoForCausalLM.from_pretrained(
+                model_id,
+                trust_remote_code=True,
+                torch_dtype=dtype,
+                device_map=device_map,
+            )
+        elif model_id == "allenai/Molmo-7B-D-0924":
+            from Molmo_7B_D_0924.modeling_molmo import MolmoForCausalLM
+
+            model = MolmoForCausalLM.from_pretrained(
+                model_id,
+                trust_remote_code=True,
+                torch_dtype=dtype,
+                device_map=device_map,
+            )
+        else:
+            # load the model
+            model = AutoModelForCausalLM.from_pretrained(
+                model_id,
+                trust_remote_code=True,
+                torch_dtype=dtype,
+                device_map=device_map,
+            )
+        # load the processor
+        processor = AutoProcessor.from_pretrained(
+            model_id,
+            trust_remote_code=True,
+            torch_dtype=dtype,
+            device_map=device_map,
+        )
         tokenizer = None
     else:
         raise ValueError(f"Unsupported model {model_id}")
@@ -770,6 +812,28 @@ def inference_single(
         res[image_id] = (
             model.chat(messages, sampling_params=sampling_params)[0].outputs[0].text
         )
+    elif model_id in [
+        "allenai/Molmo-7B-O-0924",
+        "allenai/Molmo-7B-D-0924",
+        "allenai/Molmo-72B-0924",
+        "allenai/MolmoE-1B-0924",
+    ]:
+        inputs = processor.process(images=[image], text=question)
+        inputs = {k: v.to(model.device).unsqueeze(0) for k, v in inputs.items()}
+        inputs["images"] = inputs["images"].to(dtype)
+        inputs["image_masks"] = inputs["image_masks"].to(dtype)
+        output = model.generate_from_batch(
+            inputs,
+            GenerationConfig(
+                max_new_tokens=max_tokens_len, stop_strings="<|endoftext|>"
+            ),
+            tokenizer=processor.tokenizer,
+        )
+        generated_tokens = output[0, inputs["input_ids"].size(1) :]
+        generated_text = processor.tokenizer.decode(
+            generated_tokens, skip_special_tokens=True
+        )
+        res[image_id] = generated_text
     else:
         raise ValueError(f"Unsupported model {model_id}")
     return res
@@ -818,7 +882,7 @@ def inference_single_pipeline(
 
 def main(
     dataset_handler="vcr-org/VCR-wiki-zh-hard-test",
-    model_id="mistralai/Pixtral-12B-2409",
+    model_id="allenai/Molmo-7B-O-0924",
     device="cuda",
     dtype="bf16",
     save_interval=5,  # Save progress every 100 images
@@ -913,27 +977,42 @@ def main(
             max_tokens_len = int(len(toke) * 2)
         except:
             max_tokens_len = 200  # default choice, change if needed
-            try:
-                res_stacked_image.update(
-                    inference_single(
-                        model_id,
-                        model,
-                        tokenizer,
-                        processor,
-                        stacked_image,
-                        str(image_id),
-                        question,
-                        dtype,
-                        max_tokens_len,
-                        device,
-                    )
+        try:
+            res_stacked_image.update(
+                inference_single(
+                    model_id,
+                    model,
+                    tokenizer,
+                    processor,
+                    stacked_image,
+                    str(image_id),
+                    question,
+                    dtype,
+                    max_tokens_len,
+                    device,
                 )
-                res_stacked_image_success = True
-            except Exception as e:
-                print(f"Failed at image_id, res_stacked_image: {image_id}")
-                failed_image_ids.append(image_id)
-                print(e)
-                res_stacked_image_success = False
+            )
+            res_stacked_image_success = True
+        except Exception as e:
+            print(f"Failed at image_id, res_stacked_image: {image_id}")
+            failed_image_ids.append(image_id)
+            print(e)
+            res_stacked_image_success = False
+        # res_stacked_image.update(
+        #     inference_single(
+        #         model_id,
+        #         model,
+        #         tokenizer,
+        #         processor,
+        #         stacked_image,
+        #         str(image_id),
+        #         question,
+        #         dtype,
+        #         max_tokens_len,
+        #         device,
+        #     )
+        # )
+        # res_stacked_image_success = True
         try:
             res_only_it_image.update(
                 inference_single(
