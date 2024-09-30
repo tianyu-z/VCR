@@ -492,10 +492,10 @@ def inference_single(
     dict: The inference results only with the single image.
     """
     if hasvllm:
-        if device is not None and not isinstance(model, LLM):
+        if device is not None and not isinstance(model, LLM) and device != "auto":
             model = model.to(device)
     else:
-        if device is not None:
+        if device is not None and device != "auto":
             model = model.to(device)
     res = {}
     if max_tokens_len is None:
