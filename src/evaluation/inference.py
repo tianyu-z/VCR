@@ -228,7 +228,7 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
         )
         model.eval()
         processor = None
-    elif model_id == "HuggingFaceM4/idefics2-8b":
+    elif model_id in ["HuggingFaceM4/idefics2-8b", "HuggingFaceM4/Idefics3-8B-Llama3"]:
         if is_finetune:
             raise ValueError(f"Fine-tuning is not supported for {model_id}")
         processor = AutoProcessor.from_pretrained(model_id)
@@ -573,7 +573,7 @@ def inference_single(
             use_meta=True,
             max_new_tokens=max_tokens_len,
         )
-    elif model_id == "HuggingFaceM4/idefics2-8b":
+    elif model_id in ["HuggingFaceM4/idefics2-8b", "HuggingFaceM4/Idefics3-8B-Llama3"]:
         messages = [
             {
                 "role": "user",
@@ -879,7 +879,7 @@ def inference_single_pipeline(
     """
     if language not in ["en", "zh"]:
         raise ValueError("Unsupported language")
-    if model_id == "HuggingFaceM4/idefics2-8b":
+    if model_id in ["HuggingFaceM4/idefics2-8b", "HuggingFaceM4/Idefics3-8B-Llama3"]:
         assert language == "en", "Only support English for this model"
     question = get_question(language)
     res = inference_with_image_path(
@@ -948,7 +948,7 @@ def main(
     dataset = load_dataset(dataset_handler)["test"]
     if finetune_peft_path is not None:
         model_id_name = model_id.replace("/", "-")
-        finetune_peft_path_name = finetune_peft_path.split("/")[-1]
+        finetune_peft_path_name = "ft_" + finetune_peft_path.split("/")[-2]
         model_id_name = f"{model_id_name}_{finetune_peft_path_name}"
         print(f"Eval {finetune_peft_path}")
     else:
