@@ -114,7 +114,7 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
         model.eval()
         processor = None
     elif model_id in ["openbmb/MiniCPM-V-2_6"]:
-        from transformers import AutoModelForCausalLM, AutoTokenizer
+        from transformers import AutoModel, AutoTokenizer
 
         model = AutoModel.from_pretrained(
             model_id,
@@ -229,6 +229,7 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
         processor = None
     elif model_id in ["HuggingFaceM4/idefics2-8b", "HuggingFaceM4/Idefics3-8B-Llama3"]:
         from transformers import AutoProcessor, AutoModelForVision2Seq
+
         if is_finetune:
             raise ValueError(f"Fine-tuning is not supported for {model_id}")
         processor = AutoProcessor.from_pretrained(model_id)
@@ -521,13 +522,14 @@ def inference_single(
             )
     elif model_id == "openbmb/MiniCPM-V-2_6":
         msgs = [{"role": "user", "content": [image, question]}]
-        res[image_id] = model.chat(
-            image=None,
-            msgs=msgs,
-            tokenizer=tokenizer,
-            sampling=False,
-            max_new_tokens=max_tokens_len,
-        )
+        with torch.no_grad():
+            res[image_id] = model.chat(
+                image=None,
+                msgs=msgs,
+                tokenizer=tokenizer,
+                sampling=False,
+                max_new_tokens=max_tokens_len,
+            )
     elif model_id in [
         "OpenGVLab/InternVL-Chat-V1-5",
         "OpenGVLab/InternVL2-1B",
