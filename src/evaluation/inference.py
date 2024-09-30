@@ -902,7 +902,7 @@ def main(
     dtype="bf16",
     save_interval=5,  # Save progress every 100 images
     resume=True,  # Whether to resume from the last saved state
-    finetune_peft_path="/network/scratch/t/tianyu.zhang/official/VQA_Benchmark_cover_char/qwen2vl_2B_en_easy/final_model",
+    finetune_peft_path=None,
     end_index=5000,
 ):
     """
