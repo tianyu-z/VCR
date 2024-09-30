@@ -11,7 +11,6 @@ from fire import Fire
 from tqdm import tqdm
 from transformers import AutoModel
 from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
-from transformers import AutoProcessor, AutoModelForVision2Seq
 from utils import load_image as load_image_ext
 from peft import AutoPeftModelForCausalLM
 import base64
@@ -229,6 +228,7 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
         model.eval()
         processor = None
     elif model_id in ["HuggingFaceM4/idefics2-8b", "HuggingFaceM4/Idefics3-8B-Llama3"]:
+        from transformers import AutoProcessor, AutoModelForVision2Seq
         if is_finetune:
             raise ValueError(f"Fine-tuning is not supported for {model_id}")
         processor = AutoProcessor.from_pretrained(model_id)
@@ -897,7 +897,7 @@ def inference_single_pipeline(
 
 def main(
     dataset_handler="vcr-org/VCR-wiki-en-easy-test",
-    model_id="Qwen/Qwen2-VL-2B-Instruct",
+    model_id="HuggingFaceM4/Idefics3-8B-Llama3",
     device="cuda",
     dtype="bf16",
     save_interval=5,  # Save progress every 100 images
