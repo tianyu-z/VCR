@@ -76,6 +76,8 @@ VCR-wiki comprises **2.11M** English and **346K** Chinese entities sourced from 
 
 # Benchmark
 EM means `"Exact Match"` and Jaccard means `"Jaccard Similarity"`. The best in closed source and open source are highlighted in **bold**. The second best are highlighted in *italic*. Closed source models are evaluated based on [500 test samples](https://huggingface.co/collections/vcr-org/vcr-visual-caption-restoration-500-test-subsets-6667c9efd77c55f2363b34a1), while open source models are evaluated based on [5000 test samples](https://huggingface.co/collections/vcr-org/vcr-visual-caption-restoration-6661393b1761e2aff7b967b9).
+
+**Note that our benchmarks and datasets are available publically on Jun 10, 2024**
 | Model | Size (unknown for closed source) | Released date (MMDDYY) | En Easy EM | En Easy Jaccard | En Hard EM | En Hard Jaccard | Zh Easy EM | Zh Easy Jaccard | Zh Hard EM | Zh Hard Jaccard |
 |---|---|---|---|---|---|---|---|---|---|---|
 | Claude 3 Opus | - | 030424 | 62.0 | 77.67 | 37.8 | 57.68 | 0.9 | 11.5 | 0.3 | 9.22 |
@@ -111,7 +113,8 @@ EM means `"Exact Match"` and Jaccard means `"Jaccard Similarity"`. The best in c
 | Monkey | 7B | 112223 | 50.66 | 67.6 | 1.96 | 14.02 | 0.62 | 8.34 | 0.12 | 6.36 |
 | Phi-3.5-V | 7B | 082124 | 39.27 | 60.40 | 0.90 | 15.00 | - | - | - | - |
 | Qwen-VL | 7B | 082023 | 49.71 | 69.94 | 2.0 | 15.04 | 0.04 | 1.5 | 0.01 | 1.17 |
-| Qwen2-VL | 7B | 082824 | **89.70** | **93.84** | **74.32** | **85.47** | **59.94** | **76.95** | **18.33** | **43.55** |
+| Qwen2-VL | 7B | 082824 | 89.70 | 93.84 | **74.32** | **85.47** | **59.94** | **76.95** | **18.33** | **43.55** |
+| Qwen2-VL | 72B | 091724 | **91.30** | **94.64** | 69.87 | 71.70 | **65.38** | 74.08 | 15.30 | 27.35 |
 | Yi-VL | 34B | 011824 | 0.82 | 5.59 | 0.07 | 4.31 | 0.0 | 4.44 | 0.0 | 4.12 |
 | Yi-VL | 6B | 011724 | 0.75 | 5.54 | 0.06 | 4.46 | 0.00 | 4.37 | 0.00 | 4.0 |
 
