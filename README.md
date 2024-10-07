@@ -134,6 +134,7 @@ We support open-source model_id:
 "Qwen/Qwen-VL-Chat",
 "Qwen/Qwen2-VL-2B-Instruct",
 "Qwen/Qwen2-VL-7B-Instruct",
+"Qwen/Qwen2-VL-72B-Instruct",
 "THUDM/cogvlm2-llama3-chinese-chat-19B",
 "THUDM/cogvlm2-llama3-chat-19B",
 "THUDM/cogvlm-chat-hf",

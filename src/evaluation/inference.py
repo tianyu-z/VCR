@@ -315,7 +315,7 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
         tokenizer, model, processor, _ = load_pretrained_model(
             model_path, None, model_name, device_map=device_map
         )
-    elif model_id in ["Qwen/Qwen2-VL-7B-Instruct", "Qwen/Qwen2-VL-2B-Instruct"]:
+    elif model_id in ["Qwen/Qwen2-VL-72B-Instruct", "Qwen/Qwen2-VL-7B-Instruct", "Qwen/Qwen2-VL-2B-Instruct"]:
         from transformers import (
             Qwen2VLForConditionalGeneration,
             AutoTokenizer,
@@ -740,7 +740,7 @@ def inference_single(
         res[image_id] = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[
             0
         ].strip()
-    elif model_id in ["Qwen/Qwen2-VL-7B-Instruct", "Qwen/Qwen2-VL-2B-Instruct"]:
+    elif model_id in ["Qwen/Qwen2-VL-72B-Instruct", "Qwen/Qwen2-VL-7B-Instruct", "Qwen/Qwen2-VL-2B-Instruct"]:
         conversation = [
             {
                 "role": "user",
