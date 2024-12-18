@@ -160,7 +160,6 @@ We support open-source model_id:
 "meta-llama/Llama-3.2-90B-Vision-Instruct",
 "deepseek-ai/deepseek-vl2",
 "deepseek-ai/deepseek-vl2-small",
-"deepseek-ai/deepseek-vl2-tiny",
 ]
 ```
 For the models not on list, they are not intergated with huggingface, please refer to their github repo to create the evaluation pipeline. Examples of the inference logic are in `src/evaluation/inference.py`

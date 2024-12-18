@@ -173,4 +173,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     main(args.jsons_path, args.bootstrap)
-    # main("/home/work/VCR/eval_metrics", True, start=0, end=5000)
+    # main("/mnt/home/VCR/src/evaluation", True, start=0, end=5000)
