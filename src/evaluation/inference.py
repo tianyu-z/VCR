@@ -375,6 +375,14 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
         model = LLM(model=model_id, tokenizer_mode="mistral")
         processor = None
         tokenizer = None
+    elif "deepseek-vl2" in model_id:
+        from transformers import AutoModelForCausalLM
+        from deepseek_vl2.models import DeepseekVLV2Processor, DeepseekVLV2ForCausalLM
+        from deepseek_vl2.utils.io import load_pil_images 
+        model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True, torch_dtype=dtype, device_map=device_map)
+        processor = DeepseekVLV2Processor.from_pretrained(model_id)
+        tokenizer = processor.tokenizer
+
     elif model_id in [
         "allenai/Molmo-7B-O-0924",
         "allenai/Molmo-7B-D-0924",
@@ -851,6 +859,39 @@ def inference_single(
             generated_tokens, skip_special_tokens=True
         )
         res[image_id] = generated_text
+    elif "deepseek-vl2" in model_id:
+        conversation = [
+            {
+                "role": "<|User|>",
+                "content": f"<image>\n{question}.",
+            },
+            {"role": "<|Assistant|>", "content": ""},
+        ]
+        prepare_inputs = processor(
+            conversations=conversation,
+            images=[image],
+            force_batchify=True,
+            system_prompt=""
+        )
+        prepare_inputs["input_ids"] = prepare_inputs["input_ids"].to(model.device)
+        prepare_inputs["attention_mask"] = prepare_inputs["attention_mask"].to(model.device)
+        prepare_inputs["images_seq_mask"] = prepare_inputs["images_seq_mask"].to(model.device)
+        prepare_inputs["images_spatial_crop"] = prepare_inputs["images_spatial_crop"].to(model.device)
+        prepare_inputs["images"] = prepare_inputs["images"].to(dtype).to(model.device)
+        
+        inputs_embeds = model.prepare_inputs_embeds(**prepare_inputs)
+        outputs = model.language.generate(
+            input_ids=prepare_inputs["input_ids"].to(model.device),
+            inputs_embeds=inputs_embeds.to(model.device),
+            attention_mask=prepare_inputs.attention_mask.to(model.device),
+            pad_token_id=tokenizer.eos_token_id,
+            bos_token_id=tokenizer.bos_token_id,
+            eos_token_id=tokenizer.eos_token_id,
+            max_new_tokens=512,
+            do_sample=False,
+            use_cache=True
+        )
+        res[image_id] = tokenizer.decode(outputs[0].cpu().tolist(), skip_special_tokens=True)
     else:
         raise ValueError(f"Unsupported model {model_id}")
     return res
@@ -899,7 +940,7 @@ def inference_single_pipeline(
 
 def main(
     dataset_handler="vcr-org/VCR-wiki-en-easy-test",
-    model_id="HuggingFaceM4/Idefics3-8B-Llama3",
+    model_id="deepseek-ai/deepseek-vl2",
     device="cuda",
     dtype="bf16",
     save_interval=5,  # Save progress every 100 images

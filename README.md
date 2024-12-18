@@ -117,6 +117,9 @@ EM means `"Exact Match"` and Jaccard means `"Jaccard Similarity"`. The best in c
 | Qwen2-VL | 72B | 091724 | **91.30** | **94.64** | 69.87 | 71.70 | **65.38** | 74.08 | 15.30 | 27.35 |
 | Yi-VL | 34B | 011824 | 0.82 | 5.59 | 0.07 | 4.31 | 0.0 | 4.44 | 0.0 | 4.12 |
 | Yi-VL | 6B | 011724 | 0.75 | 5.54 | 0.06 | 4.46 | 0.00 | 4.37 | 0.00 | 4.0 |
+| Ovis1.6-Gemma2 | 9B | 091824 | 58.74 | 79.20 | 3.49 | 21.74 | - | - | - | - |
+| Ovis1.6-Gemma2 | 27B | 091824 | 64.58 | 81.06 | 5.02 | 25.49 | - | - | - | - |
+| Ovis1.6-Llama3.2 | 3B | 101624 | 45.80 | 66.94 | 2.28 | 18.05 | - | - | - | - |
 
 # Model Evaluation
 
@@ -154,7 +157,10 @@ We support open-source model_id:
 "OpenGVLab/InternVL2-Llama3-76B",
 "mistralai/Pixtral-12B-2409",
 "meta-llama/Llama-3.2-11B-Vision-Instruct",
-"meta-llama/Llama-3.2-90B-Vision-Instruct"
+"meta-llama/Llama-3.2-90B-Vision-Instruct",
+"deepseek-ai/deepseek-vl2",
+"deepseek-ai/deepseek-vl2-small",
+"deepseek-ai/deepseek-vl2-tiny",
 ]
 ```
 For the models not on list, they are not intergated with huggingface, please refer to their github repo to create the evaluation pipeline. Examples of the inference logic are in `src/evaluation/inference.py`
