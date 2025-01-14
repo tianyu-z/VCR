@@ -2,11 +2,12 @@ Pillow~=9.5.0
 datasets~=2.19.1
 numpy~=1.26.4
 spacy~=3.7.4
-torch>=2.1.0
+nltk
+# torch>=2.1.0
 fire~=0.6.0
-torchvision
-transformers==4.41.2 # require by CogVLM2
+# torchvision
+# transformers==4.41.2 # require by CogVLM2
 # cambrain
-ezcolorlog
-open_clip_torch
-diffusers
+# ezcolorlog
+# open_clip_torch
+# diffusers

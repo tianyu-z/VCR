@@ -16,6 +16,7 @@ from peft import AutoPeftModelForCausalLM
 import base64
 import io
 
+
 try:
     from vllm import LLM
     from vllm.sampling_params import SamplingParams
@@ -315,7 +316,12 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
         tokenizer, model, processor, _ = load_pretrained_model(
             model_path, None, model_name, device_map=device_map
         )
-    elif model_id in ["Qwen/Qwen2-VL-72B-Instruct", "Qwen/Qwen2-VL-7B-Instruct", "Qwen/Qwen2-VL-2B-Instruct"]:
+    elif model_id in [
+        "Qwen/Qwen2-VL-72B-Instruct",
+        "Qwen/Qwen2-VL-7B-Instruct",
+        "Qwen/Qwen2-VL-2B-Instruct",
+        "Qwen/QVQ-72B-Preview",
+    ]:
         from transformers import (
             Qwen2VLForConditionalGeneration,
             AutoTokenizer,
@@ -378,11 +384,21 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
     elif "deepseek-vl2" in model_id:
         from transformers import AutoModelForCausalLM
         from deepseek_vl2.models import DeepseekVLV2Processor, DeepseekVLV2ForCausalLM
-        from deepseek_vl2.utils.io import load_pil_images 
-        model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True, torch_dtype=dtype, device_map=device_map)
+        from deepseek_vl2.utils.io import load_pil_images
+
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id, trust_remote_code=True, torch_dtype=dtype, device_map=device_map
+        )
         processor = DeepseekVLV2Processor.from_pretrained(model_id)
         tokenizer = processor.tokenizer
-
+    elif "ovis1.6" in model_id.lower():
+        from transformers import AutoModelForCausalLM
+        model = AutoModelForCausalLM.from_pretrained(model_id,
+                                                    torch_dtype=torch.bfloat16,
+                                                    multimodal_max_length=8192,
+                                                    trust_remote_code=True).to(device)
+        tokenizer = [model.get_text_tokenizer(), model.get_visual_tokenizer()]
+        processor = None
     elif model_id in [
         "allenai/Molmo-7B-O-0924",
         "allenai/Molmo-7B-D-0924",
@@ -507,8 +523,12 @@ def inference_single(
         if device is not None and device != "auto":
             model = model.to(device)
     res = {}
+
+    if model_id in ["Qwen/QVQ-72B-Preview"]:
+        max_tokens_len = 8192
     if max_tokens_len is None:
         max_tokens_len = 150
+
     if isinstance(image, str):  # image is a path
         image_id = image
         image = Image.open(image).convert("RGB")
@@ -748,7 +768,11 @@ def inference_single(
         res[image_id] = tokenizer.batch_decode(output_ids, skip_special_tokens=True)[
             0
         ].strip()
-    elif model_id in ["Qwen/Qwen2-VL-72B-Instruct", "Qwen/Qwen2-VL-7B-Instruct", "Qwen/Qwen2-VL-2B-Instruct"]:
+    elif model_id in [
+        "Qwen/Qwen2-VL-72B-Instruct",
+        "Qwen/Qwen2-VL-7B-Instruct",
+        "Qwen/Qwen2-VL-2B-Instruct",
+    ]:
         conversation = [
             {
                 "role": "user",
@@ -777,6 +801,53 @@ def inference_single(
                 skip_special_tokens=True,
                 clean_up_tokenization_spaces=True,
             )[0]
+    elif model_id in ["Qwen/QVQ-72B-Preview"]:
+        from qwen_vl_utils import process_vision_info
+
+        messages = [
+            {
+                "role": "system",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "You are a helpful and harmless assistant. You are Qwen developed by Alibaba. You should think step-by-step.",
+                    }
+                ],
+            },
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image", "image": image},
+                    {
+                        "type": "text",
+                        "text": question,
+                    },
+                ],
+            },
+        ]
+        text = processor.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+        image_inputs, video_inputs = process_vision_info(messages)
+        inputs = processor(
+            text=[text],
+            images=image_inputs,
+            videos=video_inputs,
+            padding=True,
+            return_tensors="pt",
+        )
+        inputs = inputs.to(model.device)
+        generated_ids = model.generate(**inputs, max_new_tokens=8192)
+        generated_ids_trimmed = [
+            out_ids[len(in_ids) :]
+            for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+        ]
+        output_text = processor.batch_decode(
+            generated_ids_trimmed,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=False,
+        )
+        res[image_id] = output_text[0]
     elif model_id in ["microsoft/Phi-3.5-vision-instruct"]:
         messages = [
             {"role": "user", "content": "<|image_1|>\n" + question},
@@ -837,6 +908,28 @@ def inference_single(
         res[image_id] = (
             model.chat(messages, sampling_params=sampling_params)[0].outputs[0].text
         )
+    elif "ovis1.6" in model_id.lower():
+        prompt, input_ids, pixel_values = model.preprocess_inputs(f'<image>\n{question}', [image])
+        text_tokenizer, visual_tokenizer = tokenizer
+        attention_mask = torch.ne(input_ids, text_tokenizer.pad_token_id)
+        input_ids = input_ids.unsqueeze(0).to(device=model.device)
+        attention_mask = attention_mask.unsqueeze(0).to(device=model.device)
+        pixel_values = [pixel_values.to(dtype=visual_tokenizer.dtype, device=visual_tokenizer.device)]
+        with torch.inference_mode():
+            gen_kwargs = dict(
+                max_new_tokens=max_tokens_len,
+                do_sample=False,
+                top_p=None,
+                top_k=None,
+                temperature=None,
+                repetition_penalty=None,
+                eos_token_id=model.generation_config.eos_token_id,
+                pad_token_id=text_tokenizer.pad_token_id,
+                use_cache=True
+            )
+            output_ids = model.generate(input_ids, pixel_values=pixel_values, attention_mask=attention_mask, **gen_kwargs)[0]
+            output = text_tokenizer.decode(output_ids, skip_special_tokens=True)
+            res[image_id] = output
     elif model_id in [
         "allenai/Molmo-7B-O-0924",
         "allenai/Molmo-7B-D-0924",
@@ -871,14 +964,20 @@ def inference_single(
             conversations=conversation,
             images=[image],
             force_batchify=True,
-            system_prompt=""
+            system_prompt="",
         )
         prepare_inputs["input_ids"] = prepare_inputs["input_ids"].to(model.device)
-        prepare_inputs["attention_mask"] = prepare_inputs["attention_mask"].to(model.device)
-        prepare_inputs["images_seq_mask"] = prepare_inputs["images_seq_mask"].to(model.device)
-        prepare_inputs["images_spatial_crop"] = prepare_inputs["images_spatial_crop"].to(model.device)
+        prepare_inputs["attention_mask"] = prepare_inputs["attention_mask"].to(
+            model.device
+        )
+        prepare_inputs["images_seq_mask"] = prepare_inputs["images_seq_mask"].to(
+            model.device
+        )
+        prepare_inputs["images_spatial_crop"] = prepare_inputs[
+            "images_spatial_crop"
+        ].to(model.device)
         prepare_inputs["images"] = prepare_inputs["images"].to(dtype).to(model.device)
-        
+
         inputs_embeds = model.prepare_inputs_embeds(**prepare_inputs)
         outputs = model.language.generate(
             input_ids=prepare_inputs["input_ids"].to(model.device),
@@ -889,9 +988,11 @@ def inference_single(
             eos_token_id=tokenizer.eos_token_id,
             max_new_tokens=512,
             do_sample=False,
-            use_cache=True
+            use_cache=True,
         )
-        res[image_id] = tokenizer.decode(outputs[0].cpu().tolist(), skip_special_tokens=True)
+        res[image_id] = tokenizer.decode(
+            outputs[0].cpu().tolist(), skip_special_tokens=True
+        )
     else:
         raise ValueError(f"Unsupported model {model_id}")
     return res
@@ -940,8 +1041,8 @@ def inference_single_pipeline(
 
 def main(
     dataset_handler="vcr-org/VCR-wiki-en-easy-test",
-    model_id="deepseek-ai/deepseek-vl2",
-    device="cuda",
+    model_id="AIDC-AI/Ovis1.6-Gemma2-9B",
+    device=None,
     dtype="bf16",
     save_interval=5,  # Save progress every 100 images
     resume=True,  # Whether to resume from the last saved state
@@ -1025,7 +1126,14 @@ def main(
     failed_image_ids = []
 
     start_index = len(merged_dict)
-
+    for i in range(start_index):
+        if merged_dict[str(i)][res_stacked_image] == "" and merged_dict[str(i)][res_only_it_image] == "" and merged_dict[str(i)][res_only_it_image_small] == "":
+            start_index = i
+            break
+        if merged_dict[str(i)][res_stacked_image] == [] and merged_dict[str(i)][res_only_it_image] == [] and merged_dict[str(i)][res_only_it_image_small] == []:
+            start_index = i
+            break
+    print(f"Starting from image_id: {start_index}")
     for image_id in tqdm(range(start_index, end_index_)):
         stacked_image = dataset[image_id]["stacked_image"]
         only_it_image = dataset[image_id]["only_it_image"]
