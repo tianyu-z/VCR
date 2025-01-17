@@ -393,10 +393,13 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
         tokenizer = processor.tokenizer
     elif "ovis1.6" in model_id.lower():
         from transformers import AutoModelForCausalLM
-        model = AutoModelForCausalLM.from_pretrained(model_id,
-                                                    torch_dtype=torch.bfloat16,
-                                                    multimodal_max_length=8192,
-                                                    trust_remote_code=True).to(device)
+
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            torch_dtype=torch.bfloat16,
+            multimodal_max_length=8192,
+            trust_remote_code=True,
+        ).to(device)
         tokenizer = [model.get_text_tokenizer(), model.get_visual_tokenizer()]
         processor = None
     elif model_id in [
@@ -909,12 +912,18 @@ def inference_single(
             model.chat(messages, sampling_params=sampling_params)[0].outputs[0].text
         )
     elif "ovis1.6" in model_id.lower():
-        prompt, input_ids, pixel_values = model.preprocess_inputs(f'<image>\n{question}', [image])
+        prompt, input_ids, pixel_values = model.preprocess_inputs(
+            f"<image>\n{question}", [image]
+        )
         text_tokenizer, visual_tokenizer = tokenizer
         attention_mask = torch.ne(input_ids, text_tokenizer.pad_token_id)
         input_ids = input_ids.unsqueeze(0).to(device=model.device)
         attention_mask = attention_mask.unsqueeze(0).to(device=model.device)
-        pixel_values = [pixel_values.to(dtype=visual_tokenizer.dtype, device=visual_tokenizer.device)]
+        pixel_values = [
+            pixel_values.to(
+                dtype=visual_tokenizer.dtype, device=visual_tokenizer.device
+            )
+        ]
         with torch.inference_mode():
             gen_kwargs = dict(
                 max_new_tokens=max_tokens_len,
@@ -925,9 +934,14 @@ def inference_single(
                 repetition_penalty=None,
                 eos_token_id=model.generation_config.eos_token_id,
                 pad_token_id=text_tokenizer.pad_token_id,
-                use_cache=True
+                use_cache=True,
             )
-            output_ids = model.generate(input_ids, pixel_values=pixel_values, attention_mask=attention_mask, **gen_kwargs)[0]
+            output_ids = model.generate(
+                input_ids,
+                pixel_values=pixel_values,
+                attention_mask=attention_mask,
+                **gen_kwargs,
+            )[0]
             output = text_tokenizer.decode(output_ids, skip_special_tokens=True)
             res[image_id] = output
     elif model_id in [
@@ -1127,10 +1141,18 @@ def main(
 
     start_index = len(merged_dict)
     for i in range(start_index):
-        if merged_dict[str(i)][res_stacked_image] == "" and merged_dict[str(i)][res_only_it_image] == "" and merged_dict[str(i)][res_only_it_image_small] == "":
+        if (
+            merged_dict[str(i)]["res_stacked_image"] == ""
+            and merged_dict[str(i)]["res_only_it_image"] == ""
+            and merged_dict[str(i)]["res_only_it_image_small"] == ""
+        ):
             start_index = i
             break
-        if merged_dict[str(i)][res_stacked_image] == [] and merged_dict[str(i)][res_only_it_image] == [] and merged_dict[str(i)][res_only_it_image_small] == []:
+        if (
+            merged_dict[str(i)]["res_stacked_image"] == []
+            and merged_dict[str(i)]["res_only_it_image"] == []
+            and merged_dict[str(i)]["res_only_it_image_small"] == []
+        ):
             start_index = i
             break
     print(f"Starting from image_id: {start_index}")
