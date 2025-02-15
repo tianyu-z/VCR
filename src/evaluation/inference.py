@@ -52,7 +52,7 @@ def cover_substrings(sentence, substrings, language="en"):
     return starting_prompt + sentence + ending_prompt
 
 
-def get_question(language, caption=None, crossed_texts=None, type=1):
+def get_question(language, caption=None, crossed_texts=None, type=0):
     """
     Get the question for the the given language.
 
