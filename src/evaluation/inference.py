@@ -52,7 +52,7 @@ def cover_substrings(sentence, substrings, language="en"):
     return starting_prompt + sentence + ending_prompt
 
 
-def get_question(language, caption=None, crossed_texts=None):
+def get_question(language, caption=None, crossed_texts=None, type=1):
     """
     Get the question for the the given language.
 
@@ -64,20 +64,24 @@ def get_question(language, caption=None, crossed_texts=None):
     Returns:
     str: The question.
     """
+    if type == 0:
+        if language == "en":
+            EN_ = "What is the covered texts in the image? Please restore the covered texts without outputting the explanations."
+        if language == "zh":
+            ZH_ = "图像中被覆盖的文本是什么？请在不输出解释的情况下还原被覆盖的文本。"
+    elif type == 1:
+        if language == "en":
+            EN_ = "What is the covered texts in the image? Please restore the covered texts without outputting the explanations. Please focus only on the description text below the image."
+        if language == "zh":
+            ZH_ = "图像中被覆盖的文本是什么？请在不输出解释的情况下还原被覆盖的文本。请只关注图片下方的描述性文字。"
     if caption is not None:
         context = cover_substrings(caption, crossed_texts, language)
     else:
         context = ""
     if language == "en":
-        return (
-            context
-            + "What is the covered texts in the image? Please restore the covered texts without outputting the explanations."
-        )
+        return context + EN_
     elif language == "zh":
-        return (
-            context
-            + "图像中被覆盖的文本是什么？请在不输出解释的情况下还原被覆盖的文本。"
-        )
+        return context + ZH_
     else:
         raise ValueError("Unsupported language")
 
@@ -321,32 +325,51 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
         "Qwen/Qwen2-VL-7B-Instruct",
         "Qwen/Qwen2-VL-2B-Instruct",
         "Qwen/QVQ-72B-Preview",
+        "Qwen/Qwen2.5-VL-7B-Instruct",
+        "Qwen/Qwen2.5-VL-3B-Instruct",
+        "Qwen/Qwen2.5-VL-72B-Instruct",
     ]:
-        from transformers import (
-            Qwen2VLForConditionalGeneration,
-            AutoTokenizer,
-            AutoProcessor,
-        )
-
-        if is_finetune:
-            model = AutoPeftModelForCausalLMWithResizedWTE.from_pretrained(
-                finetune_peft_path,
-                device_map=device_map,
-                trust_remote_code=True,
-                torch_dtype=dtype,
-            ).eval()
-            # model = AutoPeftModelForCausalLM.from_pretrained(
-            #     finetune_peft_path,
-            #     device_map=device_map,
-            #     trust_remote_code=True,
-            #     torch_dtype=dtype,
-            # ).eval()
-        else:
-            model = Qwen2VLForConditionalGeneration.from_pretrained(
-                model_id, torch_dtype="auto", device_map="auto"
+        if "Qwen2-VL" in model_id or "QVQ" in model_id:
+            from transformers import (
+                Qwen2VLForConditionalGeneration,
+                AutoTokenizer,
+                AutoProcessor,
             )
-        processor = AutoProcessor.from_pretrained(model_id)
-        tokenizer = None
+
+            if is_finetune:
+                model = AutoPeftModelForCausalLMWithResizedWTE.from_pretrained(
+                    finetune_peft_path,
+                    device_map=device_map,
+                    trust_remote_code=True,
+                    torch_dtype=dtype,
+                ).eval()
+                # model = AutoPeftModelForCausalLM.from_pretrained(
+                #     finetune_peft_path,
+                #     device_map=device_map,
+                #     trust_remote_code=True,
+                #     torch_dtype=dtype,
+                # ).eval()
+            else:
+                model = Qwen2VLForConditionalGeneration.from_pretrained(
+                    model_id, torch_dtype=dtype, device_map=device_map
+                )
+            processor = AutoProcessor.from_pretrained(model_id)
+            tokenizer = None
+        elif "Qwen2.5-VL" in model_id:
+            from transformers import (
+                Qwen2_5_VLForConditionalGeneration,
+                AutoTokenizer,
+                AutoProcessor,
+            )
+            from qwen_vl_utils import process_vision_info
+
+            model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+                model_id, torch_dtype=dtype, device_map=device_map
+            )
+            processor = AutoProcessor.from_pretrained(
+                model_id, min_pixels=200704, max_pixels=12845056
+            )
+            tokenizer = None
     elif model_id in ["microsoft/Phi-3.5-vision-instruct"]:
         from transformers import AutoModelForCausalLM
         from transformers import AutoProcessor
@@ -393,10 +416,13 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
         tokenizer = processor.tokenizer
     elif "ovis1.6" in model_id.lower():
         from transformers import AutoModelForCausalLM
-        model = AutoModelForCausalLM.from_pretrained(model_id,
-                                                    torch_dtype=torch.bfloat16,
-                                                    multimodal_max_length=8192,
-                                                    trust_remote_code=True).to(device)
+
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            torch_dtype=torch.bfloat16,
+            multimodal_max_length=8192,
+            trust_remote_code=True,
+        ).to(device)
         tokenizer = [model.get_text_tokenizer(), model.get_visual_tokenizer()]
         processor = None
     elif model_id in [
@@ -801,6 +827,47 @@ def inference_single(
                 skip_special_tokens=True,
                 clean_up_tokenization_spaces=True,
             )[0]
+    elif model_id in [
+        "Qwen/Qwen2.5-VL-7B-Instruct",
+        "Qwen/Qwen2.5-VL-3B-Instruct",
+        "Qwen/Qwen2.5-VL-72B-Instruct",
+    ]:
+        from qwen_vl_utils import process_vision_info
+
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image",
+                        "image": image,
+                    },
+                    {"type": "text", "text": question},
+                ],
+            }
+        ]
+        text = processor.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
+        image_inputs, video_inputs = process_vision_info(messages)
+        inputs = processor(
+            text=[text],
+            images=image_inputs,
+            videos=video_inputs,
+            padding=True,
+            return_tensors="pt",
+        )
+        inputs = inputs.to(model.device)
+        generated_ids = model.generate(**inputs, max_new_tokens=max_tokens_len)
+        generated_ids_trimmed = [
+            out_ids[len(in_ids) :]
+            for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
+        ]
+        res[image_id] = processor.batch_decode(
+            generated_ids_trimmed,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=False,
+        )[0]
     elif model_id in ["Qwen/QVQ-72B-Preview"]:
         from qwen_vl_utils import process_vision_info
 
@@ -909,12 +976,18 @@ def inference_single(
             model.chat(messages, sampling_params=sampling_params)[0].outputs[0].text
         )
     elif "ovis1.6" in model_id.lower():
-        prompt, input_ids, pixel_values = model.preprocess_inputs(f'<image>\n{question}', [image])
+        prompt, input_ids, pixel_values = model.preprocess_inputs(
+            f"<image>\n{question}", [image]
+        )
         text_tokenizer, visual_tokenizer = tokenizer
         attention_mask = torch.ne(input_ids, text_tokenizer.pad_token_id)
         input_ids = input_ids.unsqueeze(0).to(device=model.device)
         attention_mask = attention_mask.unsqueeze(0).to(device=model.device)
-        pixel_values = [pixel_values.to(dtype=visual_tokenizer.dtype, device=visual_tokenizer.device)]
+        pixel_values = [
+            pixel_values.to(
+                dtype=visual_tokenizer.dtype, device=visual_tokenizer.device
+            )
+        ]
         with torch.inference_mode():
             gen_kwargs = dict(
                 max_new_tokens=max_tokens_len,
@@ -925,9 +998,14 @@ def inference_single(
                 repetition_penalty=None,
                 eos_token_id=model.generation_config.eos_token_id,
                 pad_token_id=text_tokenizer.pad_token_id,
-                use_cache=True
+                use_cache=True,
             )
-            output_ids = model.generate(input_ids, pixel_values=pixel_values, attention_mask=attention_mask, **gen_kwargs)[0]
+            output_ids = model.generate(
+                input_ids,
+                pixel_values=pixel_values,
+                attention_mask=attention_mask,
+                **gen_kwargs,
+            )[0]
             output = text_tokenizer.decode(output_ids, skip_special_tokens=True)
             res[image_id] = output
     elif model_id in [
@@ -1127,14 +1205,24 @@ def main(
 
     start_index = len(merged_dict)
     for i in range(start_index):
-        if merged_dict[str(i)][res_stacked_image] == "" and merged_dict[str(i)][res_only_it_image] == "" and merged_dict[str(i)][res_only_it_image_small] == "":
+        if (
+            merged_dict[str(i)]["res_stacked_image"] == ""
+            and merged_dict[str(i)]["res_only_it_image"] == ""
+            and merged_dict[str(i)]["res_only_it_image_small"] == ""
+        ):
             start_index = i
             break
-        if merged_dict[str(i)][res_stacked_image] == [] and merged_dict[str(i)][res_only_it_image] == [] and merged_dict[str(i)][res_only_it_image_small] == []:
+        if (
+            merged_dict[str(i)]["res_stacked_image"] == []
+            and merged_dict[str(i)]["res_only_it_image"] == []
+            and merged_dict[str(i)]["res_only_it_image_small"] == []
+        ):
             start_index = i
             break
     print(f"Starting from image_id: {start_index}")
     for image_id in tqdm(range(start_index, end_index_)):
+        if image_id == 0:
+            print(f"Question: {question}")
         stacked_image = dataset[image_id]["stacked_image"]
         only_it_image = dataset[image_id]["only_it_image"]
         only_it_image_small = dataset[image_id]["only_it_image_small"]
@@ -1222,6 +1310,7 @@ def main(
             print(e)
             res_only_it_image_small_success = False
         merged_dict[str(image_id)] = {
+            "question": question,
             "res_stacked_image": (
                 res_stacked_image[str(image_id)] if res_stacked_image_success else ""
             ),
