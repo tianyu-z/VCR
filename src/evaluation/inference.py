@@ -186,6 +186,55 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
         )
         model.eval()
         processor = None
+        
+    elif model_id in [
+        "OpenGVLab/InternVL2_5-1B",
+        "OpenGVLab/InternVL2_5-2B",
+        "OpenGVLab/InternVL2_5-4B",
+        "OpenGVLab/InternVL2_5-8B",
+        "OpenGVLab/InternVL2_5-26B",
+        "OpenGVLab/InternVL2_5-38B",
+        "OpenGVLab/InternVL2_5-78B",
+    ]:
+        def split_model(model_name):
+            device_map = {}
+            world_size = torch.cuda.device_count()
+            num_layers = {
+                'InternVL2_5-1B': 24, 'InternVL2_5-2B': 24, 'InternVL2_5-4B': 36, 'InternVL2_5-8B': 32,
+                'InternVL2_5-26B': 48, 'InternVL2_5-38B': 64, 'InternVL2_5-78B': 80}[model_name]
+            # Since the first GPU will be used for ViT, treat it as half a GPU.
+            num_layers_per_gpu = math.ceil(num_layers / (world_size - 0.5))
+            num_layers_per_gpu = [num_layers_per_gpu] * world_size
+            num_layers_per_gpu[0] = math.ceil(num_layers_per_gpu[0] * 0.5)
+            layer_cnt = 0
+            for i, num_layer in enumerate(num_layers_per_gpu):
+                for j in range(num_layer):
+                    device_map[f'language_model.model.layers.{layer_cnt}'] = i
+                    layer_cnt += 1
+            device_map['vision_model'] = 0
+            device_map['mlp1'] = 0
+            device_map['language_model.model.tok_embeddings'] = 0
+            device_map['language_model.model.embed_tokens'] = 0
+            device_map['language_model.output'] = 0
+            device_map['language_model.model.norm'] = 0
+            device_map['language_model.model.rotary_emb'] = 0
+            device_map['language_model.lm_head'] = 0
+            device_map[f'language_model.model.layers.{num_layers - 1}'] = 0
+            
+        device_map = split_model(model_id.split("/")[-1])
+        if is_finetune:
+            raise ValueError(f"Fine-tuning is not supported for {model_id}")
+        
+        from transformers import AutoModel, AutoTokenizer
+        model = AutoModel.from_pretrained(
+            model_id,torch_dtype=dtype,trust_remote_code=True,device_map=device_map)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_id, trust_remote_code=True
+        )
+        model.eval()
+        processor = None
+
+    return device_map
     elif model_id in [
         "internlm/internlm-xcomposer2-vl-7b",
         "internlm/internlm-xcomposer2-4khd-7b",
@@ -595,6 +644,25 @@ def inference_single(
         "OpenGVLab/InternVL2-Llama3-76B",
     ]:
         pixel_values = load_image_ext(image, max_num=6).to(dtype).to(model.device)
+        generation_config = dict(
+            num_beams=1,
+            max_new_tokens=max_tokens_len,
+            do_sample=False,
+        )
+        with torch.no_grad():
+            res[image_id] = model.chat(
+                tokenizer, pixel_values, question, generation_config
+            )
+    elif model_id in [
+        "OpenGVLab/InternVL2_5-1B",
+        "OpenGVLab/InternVL2_5-2B",
+        "OpenGVLab/InternVL2_5-4B",
+        "OpenGVLab/InternVL2_5-8B",
+        "OpenGVLab/InternVL2_5-26B",
+        "OpenGVLab/InternVL2_5-38B",
+        "OpenGVLab/InternVL2_5-78B",
+    ]:
+        pixel_values = load_image_ext(image, max_num=12).to(dtype).to(model.device)
         generation_config = dict(
             num_beams=1,
             max_new_tokens=max_tokens_len,
