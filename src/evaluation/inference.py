@@ -241,6 +241,7 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
             device_map["language_model.model.rotary_emb"] = 0
             device_map["language_model.lm_head"] = 0
             device_map[f"language_model.model.layers.{num_layers - 1}"] = 0
+            return device_map
 
         device_map = split_model(model_id.split("/")[-1])
         if is_finetune:
@@ -1154,7 +1155,7 @@ def inference_single(
                 pad_token_id=tokenizer.eos_token_id,
                 bos_token_id=tokenizer.bos_token_id,
                 eos_token_id=tokenizer.eos_token_id,
-                max_new_tokens=512,
+                max_new_tokens=max_tokens_len,
                 do_sample=False,
                 use_cache=True,
             )
