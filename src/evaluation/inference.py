@@ -478,7 +478,7 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
         from deepseek_vl2.models import DeepseekVLV2Processor, DeepseekVLV2ForCausalLM
         from deepseek_vl2.utils.io import load_pil_images
 
-        model = AutoModelForCausalLM.from_pretrained(
+        model = DeepseekVLV2ForCausalLM.from_pretrained(
             model_id, trust_remote_code=True, torch_dtype=dtype, device_map=device_map
         )
         processor = DeepseekVLV2Processor.from_pretrained(model_id)
@@ -1129,7 +1129,7 @@ def inference_single(
         conversation = [
             {
                 "role": "<|User|>",
-                "content": f"<image>\n{question}.",
+                "content": f"<image>\n<|grounding|>{question}.",
             },
             {"role": "<|Assistant|>", "content": ""},
         ]
@@ -1138,34 +1138,31 @@ def inference_single(
             images=[image],
             force_batchify=True,
             system_prompt="",
-        )
-        prepare_inputs["input_ids"] = prepare_inputs["input_ids"].to(model.device)
-        prepare_inputs["attention_mask"] = prepare_inputs["attention_mask"].to(
-            model.device
-        )
-        prepare_inputs["images_seq_mask"] = prepare_inputs["images_seq_mask"].to(
-            model.device
-        )
-        prepare_inputs["images_spatial_crop"] = prepare_inputs[
-            "images_spatial_crop"
-        ].to(model.device)
-        prepare_inputs["images"] = prepare_inputs["images"].to(dtype).to(model.device)
+        ).to(model.device, dtype=dtype)
 
         inputs_embeds = model.prepare_inputs_embeds(**prepare_inputs)
-        outputs = model.language.generate(
-            input_ids=prepare_inputs["input_ids"].to(model.device),
-            inputs_embeds=inputs_embeds.to(model.device),
-            attention_mask=prepare_inputs.attention_mask.to(model.device),
-            pad_token_id=tokenizer.eos_token_id,
-            bos_token_id=tokenizer.bos_token_id,
-            eos_token_id=tokenizer.eos_token_id,
-            max_new_tokens=512,
-            do_sample=False,
-            use_cache=True,
-        )
-        res[image_id] = tokenizer.decode(
-            outputs[0].cpu().tolist(), skip_special_tokens=True
-        )
+
+        with torch.no_grad():
+            outputs = model.generate(
+                inputs_embeds=inputs_embeds,
+                input_ids=prepare_inputs.input_ids,
+                images=prepare_inputs.images,
+                images_seq_mask=prepare_inputs.images_seq_mask,
+                images_spatial_crop=prepare_inputs.images_spatial_crop,
+                attention_mask=prepare_inputs.attention_mask,
+                past_key_values=None,
+                pad_token_id=tokenizer.eos_token_id,
+                bos_token_id=tokenizer.bos_token_id,
+                eos_token_id=tokenizer.eos_token_id,
+                max_new_tokens=512,
+                do_sample=False,
+                use_cache=True,
+            )
+
+            res[image_id] = tokenizer.decode(
+                outputs[0][len(prepare_inputs.input_ids[0]) :].cpu().tolist(),
+                skip_special_tokens=True,
+            )
     else:
         raise ValueError(f"Unsupported model {model_id}")
     return res
