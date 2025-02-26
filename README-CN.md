@@ -19,6 +19,7 @@
 
 
 # 新闻
+- 🔥🔥🔥 **[2025-01-22]** VCR已被人工智能顶级会议**ICLR 2025**接受!
 - 🔥🔥🔥 **[2024-07-14]** 我们已经将VCR-wiki评估过程整合进[VLMEvalKit](https://github.com/open-compass/VLMEvalKit)和[lmms-eval](https://github.com/EvolvingLMMs-Lab/lmms-eval)框架中。现在，用户可以通过一行命令运行模型在VCR-wiki测试数据集上的评估。
 - 🔥🔥🔥 **[2024-06-24]** 我们更新了arXiv论文。现在，论文中包括了Claude 3.5 Sonnet、Claude 3 Opus、GPT-4o、GPT-4-Turbo、Qwen-VL-Max、Reka Core和Gemini-1.5-pro的评估结果。评估脚本也已发布，请查看`src/evaluation/closed_source_eval.py`。
 - 🔥🔥🔥 **[2024-06-15]** 我们发布了torch中的VCR变换，使得给定任意图像-文本对，我们可以生成包含文本的VCR图像。此变换可以作为VLMs中的预训练任务之一使用。
@@ -137,6 +138,10 @@ EM 表示 "完全匹配"，Jaccard 表示 "Jaccard 相似度"。封闭源代码�
 "Qwen/Qwen2-VL-2B-Instruct",
 "Qwen/Qwen2-VL-7B-Instruct",
 "Qwen/Qwen2-VL-72B-Instruct",
+"Qwen/QVQ-72B-Preview",
+"Qwen/Qwen2.5-VL-7B-Instruct",
+"Qwen/Qwen2.5-VL-3B-Instruct",
+"Qwen/Qwen2.5-VL-72B-Instruct",
 "THUDM/cogvlm2-llama3-chinese-chat-19B",
 "THUDM/cogvlm2-llama3-chat-19B",
 "THUDM/cogvlm-chat-hf",
@@ -157,6 +162,12 @@ EM 表示 "完全匹配"，Jaccard 表示 "Jaccard 相似度"。封闭源代码�
 "AIDC-AI/Ovis1.6-Gemma2-9B",
 "AIDC-AI/Ovis1.6-Gemma2-27B",
 "AIDC-AI/Ovis1.6-Gemma2-27B",
+"AIDC-AI/Ovis2-1B",
+"AIDC-AI/Ovis2-2B",
+"AIDC-AI/Ovis2-4B",
+"AIDC-AI/Ovis2-8B",
+"AIDC-AI/Ovis2-16B",
+"AIDC-AI/Ovis2-34B",
 "mistralai/Pixtral-12B-2409",
 "meta-llama/Llama-3.2-11B-Vision-Instruct",
 "meta-llama/Llama-3.2-90B-Vision-Instruct"

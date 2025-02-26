@@ -484,7 +484,7 @@ def get_model(model_id, dtype, device=None, finetune_peft_path=None):
         )
         processor = DeepseekVLV2Processor.from_pretrained(model_id)
         tokenizer = processor.tokenizer
-    elif "ovis1.6" in model_id.lower():
+    elif "ovis1.6" in model_id.lower() or "ovis2" in model_id.lower():
         from transformers import AutoModelForCausalLM
 
         model = AutoModelForCausalLM.from_pretrained(
@@ -1071,7 +1071,7 @@ def inference_single(
         res[image_id] = (
             model.chat(messages, sampling_params=sampling_params)[0].outputs[0].text
         )
-    elif "ovis1.6" in model_id.lower():
+    elif "ovis1.6" in model_id.lower() or "ovis2" in model_id.lower():
         prompt, input_ids, pixel_values = model.preprocess_inputs(
             f"<image>\n{question}", [image]
         )

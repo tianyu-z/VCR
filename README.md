@@ -18,6 +18,7 @@
 </div>
 
 # News
+- 🔥🔥🔥 **[2025-01-22]** VCR is accepted at **ICLR 2025**!
 - 🔥🔥🔥 **[2024-07-14]** We have incorperated the VCR-wiki evaluation process in [VLMEvalKit](https://github.com/open-compass/VLMEvalKit) and [lmms-eval](https://github.com/EvolvingLMMs-Lab/lmms-eval) framework. Now, users can use one line command to run the evaluation of models on the VCR-wiki test datasets.
 - 🔥🔥🔥 **[2024-06-24]** We update our arXiv paper. Now, we have results from Claude 3.5 Sonnet, Claude 3 Opus, GPT-4o, GPT-4-Turbo, Qwen-VL-Max, Reka Core and Gemini-1.5-pro. The evaluation script is also released. Please check `src/evaluation/closed_source_eval.py`.
 - 🔥🔥🔥 **[2024-06-15]** We release the VCR transform in torch so that given any image-text pairs, we can generate the VCR images with text embedded in it. This transform can be used as one of the pretrain task within VLMs.
@@ -140,6 +141,10 @@ We support open-source model_id:
 "Qwen/Qwen2-VL-2B-Instruct",
 "Qwen/Qwen2-VL-7B-Instruct",
 "Qwen/Qwen2-VL-72B-Instruct",
+"Qwen/QVQ-72B-Preview",
+"Qwen/Qwen2.5-VL-7B-Instruct",
+"Qwen/Qwen2.5-VL-3B-Instruct",
+"Qwen/Qwen2.5-VL-72B-Instruct",
 "THUDM/cogvlm2-llama3-chinese-chat-19B",
 "THUDM/cogvlm2-llama3-chat-19B",
 "THUDM/cogvlm-chat-hf",
@@ -160,6 +165,12 @@ We support open-source model_id:
 "AIDC-AI/Ovis1.6-Gemma2-9B",
 "AIDC-AI/Ovis1.6-Gemma2-27B",
 "AIDC-AI/Ovis1.6-Gemma2-27B",
+"AIDC-AI/Ovis2-1B",
+"AIDC-AI/Ovis2-2B",
+"AIDC-AI/Ovis2-4B",
+"AIDC-AI/Ovis2-8B",
+"AIDC-AI/Ovis2-16B",
+"AIDC-AI/Ovis2-34B",
 "mistralai/Pixtral-12B-2409",
 "meta-llama/Llama-3.2-11B-Vision-Instruct",
 "meta-llama/Llama-3.2-90B-Vision-Instruct",
